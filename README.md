@@ -142,6 +142,51 @@ because that's the part that was always really yours.
   AniList entry the title resolves to (usually season 1), so long-running
   multi-season shows might need a quick manual nudge in the detail view.
 
+## Two real bugs fixed, and what changed
+
+After looking closely at how a real TV Time export actually behaves, two
+concrete problems turned up:
+
+**1. Episodes weren't landing in the right season.** TV Time groups a
+whole franchise's seasons under one show; AniList tracks each season as
+its own separate entry. The import used to add up every season's watched
+episodes into a single number and hand it to whichever AniList entry it
+matched (usually season 1) — which could make a show look "complete" for
+the wrong reason, or hide progress that actually belonged to a later
+season. The importer now computes progress **per season**, matches
+season 1 as before, then follows AniList's own sequel chain (the same
+relation data behind the community "Sequel Finder" tool AniList users
+built for a related problem) to find season 2, 3, and so on — importing
+each season's watched count against its own correct entry, as its own
+tracked item. If a sequel can't be found automatically, it's listed at
+the end as "needs manual review" rather than silently merged into the
+wrong place.
+
+**2. TV Time's own status label was sometimes stale.** Some shows had
+real watched episodes but a status of "watch_later," presumably left
+over from before the episodes were marked — the importer used to trust
+that label outright and file the show under Plan to Watch regardless.
+It now trusts your actual episode data over that label (an explicit
+"stopped" still means Dropped, since that's a deliberate action, not a
+stale field).
+
+## Continue Watching, and finding missing sequels
+
+Two additions modeled directly on how AniList's own dashboard works,
+and on the sequel-tracking problem above:
+
+- **Continue Watching** — a row at the top of the home screen (above the
+  status tabs) showing everything you're currently Watching/Reading,
+  soonest-relevant first, with an "N behind" badge when there are
+  already-aired episodes you haven't caught up on yet. Tap the tick to
+  mark the next one off right from here, or tap the poster for full
+  details.
+- **Sequels** (header toolbar) — scans everything you've marked
+  Completed and checks AniList's sequel data for a next season you
+  haven't added yet, the same concept as the AniList Sequel Finder
+  community tool. Anything missing shows up with a one-tap add.
+
+
 ---
 
 *With thanks to TV Time, 2011–2026.*

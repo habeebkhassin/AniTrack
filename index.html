@@ -69,6 +69,22 @@
   .tab.active{ color:#0C1021; font-weight:700; background:var(--fg); }
 
   main{ flex:1; padding:8px 16px 96px; }
+
+  .continue-wrap{ margin-bottom:6px; }
+  .continue-title{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--fg-dim); margin:6px 2px 10px; }
+  .continue-strip{ display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
+  .continue-strip::-webkit-scrollbar{ display:none; }
+  .cw-card{ flex:0 0 118px; cursor:pointer; }
+  .cw-card .cw-poster-wrap{ position:relative; width:118px; height:168px; border-radius:8px; overflow:hidden; background:var(--bg-card); }
+  .cw-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .cw-card .cw-behind{ position:absolute; top:6px; right:6px; background:var(--yellow); color:#0C1021; font-size:9px; font-weight:800;
+    padding:3px 6px; border-radius:999px; letter-spacing:.5px; }
+  .cw-card .cw-tick{ position:absolute; bottom:6px; right:6px; width:32px; height:32px; border-radius:50%; background:var(--fg);
+    color:var(--bg); border:none; display:flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; }
+  .cw-card .cw-title{ font-size:11px; font-weight:700; margin-top:6px; line-height:1.25; overflow:hidden; text-overflow:ellipsis;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .cw-card .cw-sub{ font-size:10px; color:var(--fg-dim); margin-top:2px; }
+
   .empty{ margin-top:60px; text-align:center; color:var(--fg-dim); font-size:13px; line-height:1.7; }
   .empty b{ color:var(--fg); }
 
@@ -220,6 +236,7 @@
     <button class="toolbtn" id="btnLists">Lists</button>
     <button class="toolbtn" id="btnImport">Import</button>
     <button class="toolbtn" id="btnNotify">Alerts: Off</button>
+    <button class="toolbtn" id="btnSequels">Sequels</button>
   </div>
   <div class="modes" id="modeToggle">
     <button class="mode active" data-m="anime">Anime</button>
@@ -229,7 +246,10 @@
 </header>
 <div class="stripe"><span class="c1"></span><span class="c2"></span><span class="c3"></span><span class="c4"></span></div>
 
-<main id="list"></main>
+<main>
+  <div id="continueSection"></div>
+  <div id="list"></div>
+</main>
 <button class="fab" id="fabAdd" aria-label="Add">+</button>
 
 <!-- search overlay -->
@@ -367,6 +387,20 @@
   </div>
 </div>
 
+<!-- missing sequels overlay -->
+<div class="overlay" id="sequelsOverlay">
+  <div class="ov-head">
+    <h2>Missing Sequels</h2>
+    <button class="ov-close" id="closeSequels">×</button>
+  </div>
+  <div class="ov-body">
+    <div class="hint">Checks every anime you've marked Completed against AniList's own sequel data, and shows any next season you haven't added yet — the same idea as the community "Sequel Finder" tool AniList users built for this exact problem.</div>
+    <button class="btn primary" id="scanSequelsBtn" style="width:100%; margin:10px 0 14px;">Scan my completed list</button>
+    <div id="sequelsProgress" class="hint" style="display:none;"></div>
+    <div id="sequelsResults"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -485,6 +519,27 @@
   const GENRE_LIST = ["Action","Adventure","Comedy","Drama","Ecchi","Fantasy","Horror","Mahou Shoujo",
     "Mecha","Music","Mystery","Psychological","Romance","Sci-Fi","Slice of Life","Sports",
     "Supernatural","Thriller"];
+
+  // Used to walk forward season-by-season through a franchise (e.g. Season 1
+  // -> Season 2 -> Season 3) via AniList's own relation graph, since AniList
+  // splits each season into a separate Media entry rather than one combined
+  // show like TV Time does.
+  const RELATIONS_QUERY = `
+    query ($id: Int) {
+      Media(id: $id) {
+        relations {
+          edges {
+            relationType
+            node {
+              id type format status episodes chapters volumes countryOfOrigin duration genres
+              title { romaji english } coverImage { medium }
+              nextAiringEpisode { airingAt episode }
+              streamingEpisodes { title }
+            }
+          }
+        }
+      }
+    }`;
 
   // ---------- helpers ----------
   function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -641,6 +696,61 @@
     return badges;
   }
 
+  // A "Continue Watching" row on the home screen, similar to AniList's own
+  // dashboard: your currently-watching/reading titles, soonest-relevant
+  // first, with how many episodes/chapters you're behind on if any are
+  // already out and unwatched. Always visible regardless of which status
+  // tab is selected below, since it's meant to answer "what's next" at a
+  // glance rather than require filtering to find out.
+  function renderContinueWatching(){
+    const el = $("#continueSection");
+    const activeStatus = mode === "anime" ? "watching" : "reading";
+    const items = list.filter(x => x.type === mode && x.status === activeStatus);
+    if(!items.length){ el.innerHTML = ""; return; }
+
+    const withBehind = items.map(item => {
+      const avail = availableCount(item);
+      const behind = avail !== null ? Math.max(0, avail - item.progress) : 0;
+      return { item, behind };
+    });
+
+    withBehind.sort((a,b) => {
+      if(b.behind !== a.behind) return b.behind - a.behind;
+      const aUp = a.item.nextAiringEpisode ? a.item.nextAiringEpisode.airingAt : Infinity;
+      const bUp = b.item.nextAiringEpisode ? b.item.nextAiringEpisode.airingAt : Infinity;
+      return aUp - bUp;
+    });
+
+    const top = withBehind.slice(0, 12);
+    el.innerHTML = `
+      <div class="continue-wrap">
+        <div class="continue-title">Continue ${mode === "anime" ? "Watching" : "Reading"}</div>
+        <div class="continue-strip" id="continueStrip"></div>
+      </div>`;
+    const strip = $("#continueStrip");
+    top.forEach(({item, behind}) => {
+      const nextNum = item.progress + 1;
+      const sub = item.type === "anime" ? `EP ${nextNum}` : `CH ${nextNum}`;
+      const card = document.createElement("div");
+      card.className = "cw-card";
+      card.innerHTML = `
+        <div class="cw-poster-wrap">
+          <img src="${item.customCover || item.cover || ""}" alt="" loading="lazy" />
+          ${behind > 0 ? `<span class="cw-behind">${behind} behind</span>` : ''}
+          <button class="cw-tick" data-act="tick" aria-label="Mark next watched">✓</button>
+        </div>
+        <div class="cw-title">${escapeHtml(item.english || item.romaji)}</div>
+        <div class="cw-sub">${sub}</div>`;
+      card.querySelector('[data-act="tick"]').addEventListener("click", (e) => {
+        e.stopPropagation();
+        bumpProgress(item, 1);
+        render();
+      });
+      card.addEventListener("click", () => openDetail(item));
+      strip.appendChild(card);
+    });
+  }
+
   function renderTabs(){
     const tabsEl = $("#tabs");
     let extra = mode === "anime" ? `<button class="tab" data-f="upcoming">Upcoming</button>` : "";
@@ -655,6 +765,7 @@
   }
 
   function render(){
+    renderContinueWatching();
     const listEl = $("#list");
     const items = list.filter(x => x.type === mode);
     let filtered;
@@ -903,29 +1014,41 @@
     return false;
   }
 
-  function computeWatchData(show){
-    let progress = 0; const history = [];
+  // Groups watched episodes by TV Time's own season number, excluding the
+  // specials season entirely. Returns { [seasonNumber]: { progress, history } }.
+  // This is the fix for combining every season's episodes into one blob —
+  // AniList tracks each season as a separate entry, so progress has to be
+  // computed and applied per season to mean anything.
+  function computeWatchDataBySeason(show){
+    const bySeason = {};
     (show.seasons||[]).forEach(season => {
+      if(season.is_specials) return;
+      const num = season.number;
+      if(!bySeason[num]) bySeason[num] = { progress:0, history:[] };
       (season.episodes||[]).forEach(ep => {
         if(ep.special) return;
         if(ep.is_watched){
-          progress++;
-          if(ep.watched_at) history.push({ season: season.number, ep: ep.number, watchedAt: ep.watched_at, rewatch: ep.rewatch_count||0 });
+          bySeason[num].progress++;
+          if(ep.watched_at) bySeason[num].history.push({ season:num, ep:ep.number, watchedAt:ep.watched_at, rewatch:ep.rewatch_count||0 });
         }
       });
     });
-    return { progress, history };
+    return bySeason;
   }
 
-  function mapStatus(show, media, progress){
-    const s = show.status;
-    if(s === "stopped") return "dropped";
-    if(s === "not_started_yet" || s === "watch_later") return "planned";
-    if(s === "continuing") return "watching";
-    if(s === "up_to_date"){
+  // TV Time's own "status" field is sometimes stale relative to the actual
+  // per-episode watched flags (a show can say "watch_later" despite having
+  // episodes marked watched). Real progress is trusted over that label,
+  // except for an explicit "stopped" (dropped), which is a deliberate action.
+  function mapStatusFromProgress(tvStatus, media, progress){
+    if(tvStatus === "stopped") return "dropped";
+    if(progress > 0){
       if(media.episodes && progress >= media.episodes && media.status === "FINISHED") return "completed";
       return "watching";
     }
+    if(tvStatus === "not_started_yet" || tvStatus === "watch_later") return "planned";
+    if(tvStatus === "continuing") return "watching";
+    if(tvStatus === "up_to_date") return "watching";
     return "watching";
   }
 
@@ -941,38 +1064,85 @@
     return null;
   }
 
-  // Shared merge logic used by both the automatic import pass and the
-  // manual resolver. Dedupes by AniList id — an existing entry is always
-  // merged into, never duplicated.
-  function applyImportedMatch(show, media){
-    const { progress, history } = computeWatchData(show);
-    const cappedProgress = media.episodes ? Math.min(progress, media.episodes) : progress;
-    const status = mapStatus(show, media, progress);
+  // Follows the SEQUEL relation from a given AniList anime id to find the
+  // next season's entry. Returns null if there's no anime sequel (end of
+  // the franchise, or AniList doesn't have the relation mapped).
+  async function fetchSequel(id){
+    try{
+      const data = await anilistQuery(RELATIONS_QUERY, { id });
+      const edges = (data.Media && data.Media.relations && data.Media.relations.edges) || [];
+      const seq = edges.find(e => e.relationType === "SEQUEL" && e.node.type === "ANIME");
+      return seq ? seq.node : null;
+    }catch(e){ return null; }
+  }
+
+  // Writes one season's worth of progress into one AniList entry. Dedupes by
+  // AniList id — an existing entry is always merged into, never duplicated.
+  function applyImportedMedia(media, opts){
+    const cappedProgress = media.episodes ? Math.min(opts.progress, media.episodes) : opts.progress;
+    const status = mapStatusFromProgress(opts.tvStatus, media, opts.progress);
     const existing = itemById(media.id, "anime");
     if(existing){
       existing.progress = Math.max(existing.progress, cappedProgress);
-      existing.favorite = existing.favorite || !!show.is_favorite;
+      existing.favorite = existing.favorite || !!opts.favorite;
       const seen = new Set(existing.history.map(h => `${h.season}-${h.ep}-${h.watchedAt}`));
-      history.forEach(h => { const k = `${h.season}-${h.ep}-${h.watchedAt}`; if(!seen.has(k)){ existing.history.push(h); seen.add(k); } });
+      opts.history.forEach(h => { const k = `${h.season}-${h.ep}-${h.watchedAt}`; if(!seen.has(k)){ existing.history.push(h); seen.add(k); } });
       existing.updatedAt = Date.now();
       saveList();
       return "merged";
     }
     list.push({
       id: media.id, type:"anime",
-      romaji: media.title.romaji, english: media.title.english, cover: media.coverImage.medium,
-      format: media.format, countryOfOrigin: null,
+      romaji: media.title.romaji, english: media.title.english, cover: media.coverImage.medium, customCover:null,
+      format: media.format, countryOfOrigin: media.countryOfOrigin || null,
+      genres: media.genres || [], duration: media.duration || null,
       totalEpisodes: media.episodes || null, totalChapters:null, totalVolumes:null,
-      mediaStatus: media.status, status, season: 1,
+      mediaStatus: media.status, status, season: opts.seasonNumber || 1,
       progress: cappedProgress, volumeProgress:0,
       nextAiringEpisode: media.nextAiringEpisode || null,
       episodeTitles: (media.streamingEpisodes || []).map(e => e.title),
-      favorite: !!show.is_favorite, rating:null, notes:"",
-      history, updatedAt: Date.now(), importedFrom:"tvtime"
+      favorite: !!opts.favorite, rating:null, notes:"",
+      history: opts.history, updatedAt: Date.now(), importedFrom:"tvtime"
     });
     saveList();
     return "added";
   }
+
+  // Orchestrates a full show import: matches the base title (season 1),
+  // then walks forward through AniList's sequel chain for any further
+  // seasons TV Time recorded watched episodes for, importing each one
+  // against its own correct AniList entry instead of lumping every
+  // season's progress into a single one.
+  async function applyImportedMatch(show, baseMedia){
+    const seasonData = computeWatchDataBySeason(show);
+    const seasonNumbers = Object.keys(seasonData).map(Number).sort((a,b) => a-b);
+    const result = { added:0, merged:0, needsReview:[] };
+    if(!seasonNumbers.length) return result;
+
+    const baseNum = seasonNumbers[0];
+    const baseOutcome = applyImportedMedia(baseMedia, {
+      progress: seasonData[baseNum].progress, history: seasonData[baseNum].history,
+      tvStatus: show.status, favorite: show.is_favorite, seasonNumber: baseNum
+    });
+    result[baseOutcome]++;
+
+    let cursor = baseMedia;
+    for(let i = 1; i < seasonNumbers.length; i++){
+      const num = seasonNumbers[i];
+      if(seasonData[num].progress === 0) continue;
+      const seq = await fetchSequel(cursor.id);
+      if(!seq){ result.needsReview.push(`${show.title} — Season ${num}`); continue; }
+      const outcome = applyImportedMedia(seq, {
+        progress: seasonData[num].progress, history: seasonData[num].history,
+        tvStatus: show.status, favorite: show.is_favorite, seasonNumber: num
+      });
+      result[outcome]++;
+      cursor = seq;
+      await sleep(500);
+    }
+    return result;
+  }
+
 
   $("#btnImport").addEventListener("click", () => {
     importOverlay.classList.add("open");
@@ -1015,6 +1185,7 @@
     $("#importStep2").classList.add("active");
     let added = 0, merged = 0, skipped = 0;
     const skippedShows = [];
+    const needsReviewSeasons = [];
     const total = tvTimeShows.length;
 
     for(let i = 0; i < total; i++){
@@ -1026,8 +1197,10 @@
         const media = await matchShow(show);
         if(!media){ skipped++; skippedShows.push(show); }
         else{
-          const result = applyImportedMatch(show, media);
-          if(result === "merged") merged++; else added++;
+          const result = await applyImportedMatch(show, media);
+          added += result.added;
+          merged += result.merged;
+          if(result.needsReview.length) needsReviewSeasons.push(...result.needsReview);
         }
       }catch(err){ skipped++; skippedShows.push(Object.assign({}, show, { _importError: true })); }
 
@@ -1043,10 +1216,13 @@
     $("#rAdded").textContent = added;
     $("#rMerged").textContent = merged;
     $("#rSkipped").textContent = skipped;
-    $("#skipList").innerHTML = skippedShows.map(s => `<div>${escapeHtml(s.title)}${s._importError ? " (error)" : ""}</div>`).join("") || "<div>None</div>";
+    const skipLines = skippedShows.map(s => `<div>${escapeHtml(s.title)}${s._importError ? " (error)" : ""}</div>`);
+    const reviewLines = needsReviewSeasons.map(t => `<div>⚠ ${escapeHtml(t)} — found the show, but couldn't find that season on AniList automatically</div>`);
+    $("#skipList").innerHTML = (skipLines.concat(reviewLines)).join("") || "<div>None</div>";
     $("#resolveSkippedBtn").style.display = skippedShows.length ? "inline-block" : "none";
     render();
   });
+
 
   $("#toggleSkipList").addEventListener("click", () => {
     const el = $("#skipList");
@@ -1115,8 +1291,10 @@
         <div><div class="rtitle">${escapeHtml(title)}</div><div class="rmeta">${m.format || "—"} · ${m.episodes ? m.episodes + " eps" : "eps unknown"}</div></div>
         <div class="radd"><button class="btn ${already ? "ghost" : "primary"}" ${already ? "disabled" : ""}>${already ? "Already in list" : "+ Add this"}</button></div>`;
       if(!already){
-        div.querySelector("button").addEventListener("click", () => {
-          applyImportedMatch(show, m);
+        div.querySelector("button").addEventListener("click", async () => {
+          const btn = div.querySelector("button");
+          btn.disabled = true; btn.textContent = "Adding…";
+          await applyImportedMatch(show, m);
           toast(`Added "${title}"`);
           resolverIdx++;
           showResolverItem();
@@ -1439,6 +1617,58 @@
         e.stopPropagation();
         if(itemById(m.id, mode)){ toast("Already in your list."); return; }
         addToList(m, mode);
+        const btn = card.querySelector(".dc-add");
+        btn.textContent = "✓"; btn.classList.add("added");
+      });
+      grid.appendChild(card);
+    });
+  }
+
+  // ---------- missing sequels (community "Sequel Finder" concept) ----------
+  const sequelsOverlay = $("#sequelsOverlay");
+  $("#btnSequels").addEventListener("click", () => { sequelsOverlay.classList.add("open"); });
+  $("#closeSequels").addEventListener("click", () => sequelsOverlay.classList.remove("open"));
+
+  $("#scanSequelsBtn").addEventListener("click", async () => {
+    if(!navigator.onLine){ toast("You're offline — connect to the internet to scan."); return; }
+    const completed = list.filter(x => x.type === "anime" && x.status === "completed");
+    if(!completed.length){ $("#sequelsResults").innerHTML = `<div class="hint">No completed anime to check yet.</div>`; return; }
+
+    $("#scanSequelsBtn").disabled = true;
+    const progressEl = $("#sequelsProgress");
+    progressEl.style.display = "";
+    $("#sequelsResults").innerHTML = "";
+    const found = [];
+    for(let i = 0; i < completed.length; i++){
+      progressEl.textContent = `Checking ${i+1}/${completed.length}: ${completed[i].english || completed[i].romaji}`;
+      try{
+        const seq = await fetchSequel(completed[i].id);
+        if(seq && !itemById(seq.id, "anime") && !found.some(f => f.id === seq.id)) found.push(seq);
+      }catch(e){ /* skip on individual failure */ }
+      await sleep(500);
+    }
+    progressEl.style.display = "none";
+    $("#scanSequelsBtn").disabled = false;
+    renderSequelResults(found);
+  });
+
+  function renderSequelResults(media){
+    const el = $("#sequelsResults");
+    if(!media.length){ el.innerHTML = `<div class="hint">No missing sequels found — you're fully caught up on everything you've completed.</div>`; return; }
+    el.innerHTML = `<div class="disc-grid"></div>`;
+    const grid = el.querySelector(".disc-grid");
+    media.forEach(m => {
+      const title = m.title.english || m.title.romaji;
+      const card = document.createElement("div");
+      card.className = "disc-card";
+      card.innerHTML = `
+        <img src="${m.coverImage.medium}" alt="" loading="lazy" />
+        <div class="dc-title">${escapeHtml(title)}</div>
+        <button class="dc-add">+</button>`;
+      card.querySelector(".dc-add").addEventListener("click", (e) => {
+        e.stopPropagation();
+        if(itemById(m.id, "anime")){ toast("Already in your list."); return; }
+        addToList(m, "anime");
         const btn = card.querySelector(".dc-add");
         btn.textContent = "✓"; btn.classList.add("added");
       });
