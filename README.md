@@ -175,16 +175,59 @@ stale field).
 Two additions modeled directly on how AniList's own dashboard works,
 and on the sequel-tracking problem above:
 
-- **Continue Watching** — a row at the top of the home screen (above the
-  status tabs) showing everything you're currently Watching/Reading,
-  soonest-relevant first, with an "N behind" badge when there are
-  already-aired episodes you haven't caught up on yet. Tap the tick to
-  mark the next one off right from here, or tap the poster for full
-  details.
+- **Home feed** — see the dedicated section below; this replaced an
+  earlier horizontal "Continue Watching" strip with a fuller TV
+  Time-style scrolling layout.
 - **Sequels** (header toolbar) — scans everything you've marked
   Completed and checks AniList's sequel data for a next season you
   haven't added yet, the same concept as the AniList Sequel Finder
   community tool. Anything missing shows up with a one-tap add.
+
+## Home feed (the "Home" tab)
+
+The default tab — labeled **Home** — mirrors TV Time's own vertical
+scroll layout instead of a flat list:
+
+- **Watch Next** — where the app always opens. Your actively-watching/
+  reading shows, plus anything with a genuinely fresh episode/chapter
+  (detected the moment a refresh notices one become available), highlighted
+  with a subtle yellow outline.
+- **Haven't Watched For A While** — the same active shows, but you
+  haven't marked anything watched on them in 14+ days and nothing about
+  them is fresh. Sorted by how far behind you are, most behind first.
+- **Watched History** — sits scrolled just above Watch Next, dimmed, and
+  only comes into view if you scroll up on purpose. Shows the last couple
+  of things you actually marked watched, with a static green checkmark
+  (a record, not an action) and how long ago.
+
+The split is based on **recency of your last watched episode**, not how
+many episodes have piled up — a show you're 30 episodes behind on but
+watched yesterday stays in Watch Next; one you're only 4 behind on but
+haven't opened in a month gets demoted.
+
+**Honest limitation on "fresh":** detecting a newly-released episode
+relies on AniList's polling happening while the app is open (same
+limitation as Alerts). If you haven't opened AniTrack in a while, a show
+with a new episode might not get the fresh highlight the first time you
+check back — it'll still show up correctly in Watch Next or the stale
+section based on recency, just without the yellow "just dropped"
+highlight until the app catches the transition itself.
+
+## Bottom tab bar
+
+Navigation is a bottom tab bar, like TV Time and Logbook both use:
+
+- **Anime** / **Reading** — the Home feed (Watch Next / Haven't Watched
+  For A While / Watched History).
+- **Discover** — Trending/Popular/This Season/By Genre, as a full page.
+- **More** — everything else lives here: Stats (with a TV Time-style
+  "time spent watching" hero card, a per-day bar chart, quick stat cards,
+  a 6-month chart, top genres, and badges), your Custom Lists, Import
+  from TV Time, Find Missing Sequels, and the Episode Alerts toggle.
+
+The header itself is just the app name and a small dot for online/offline
+status now — the page counter and clock were cut since they weren't
+adding anything.
 
 
 ---
