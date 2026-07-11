@@ -3,229 +3,321 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0C1021" />
+<meta name="theme-color" content="#0D1117" />
 <title>AniTrack</title>
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon-192.png" />
 <link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#0C1021;
-    --bg-alt:#141a33;
-    --bg-card:#1b2244;
-    --bg-card-hi:#232c56;
-    --fg:#e8e8ec;
-    --fg-dim:#8b93b8;
-    --fg-faint:#5b6389;
-    --cyan:#4DD9E8;
-    --yellow:#F2C94C;
-    --magenta:#E85DA0;
-    --green:#6FCF97;
-    --orange:#F2994A;
-    --red:#EB5757;
-    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", "JetBrains Mono", monospace;
+    --bg:#0D1117;
+    --bg-alt:#11161D;
+    --bg-card:#161B22;
+    --bg-card-hi:#1C232C;
+    --border:#2A313C;
+    --fg:#F2F5F7;
+    --fg-dim:#98A2B3;
+    --fg-faint:#6B7280;
+    --accent:#5FA8FF;
+    --amber:#D4A72C;
+    --status-green:#57AB5A;
+    --status-orange:#D2822E;
+    --status-red:#E5534B;
+    --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg);
-    font-family:var(--mono); -webkit-tap-highlight-color:transparent; overscroll-behavior-y: contain; }
+    font-family:var(--font-body); -webkit-tap-highlight-color:transparent; overscroll-behavior-y: contain; }
   body{ display:flex; flex-direction:column; min-height:100vh; }
-  ::selection{ background:var(--cyan); color:#000; }
-  button, select, textarea, input{ font-family:var(--mono); }
+  ::selection{ background:var(--accent); color:#0D1117; }
+  button, select, textarea, input{ font-family:var(--font-body); }
+  h1,h2,h3,.page-title,.brand,.ep-big,.ep-big-detail,.hero-title,.hero-numbers b,.stat-card .num,
+  .list-row .lname, .cast-item .cname{ font-family:var(--font-heading); }
 
-  .stripe{ height:4px; display:flex; }
+  .stripe{ height:1px; display:flex; }
   .stripe span{ flex:1; }
-  .stripe .c1{ background:var(--cyan); } .stripe .c2{ background:var(--yellow); }
-  .stripe .c3{ background:var(--magenta); } .stripe .c4{ background:var(--green); }
+  .stripe .c1, .stripe .c2, .stripe .c3, .stripe .c4{ background:var(--border); }
 
-  header{ position:sticky; top:0; z-index:20; background:var(--bg); padding:14px 16px 0; }
+  header{ position:sticky; top:0; z-index:20; background:var(--bg); padding:14px 16px 0; border-bottom:1px solid transparent; }
   .headrow{ display:flex; align-items:center; justify-content:space-between; }
-  .brand{ font-weight:700; letter-spacing:2px; font-size:18px; }
-  .dot{ width:8px; height:8px; border-radius:50%; background:var(--green); }
-  .dot.off{ background:var(--red); }
+  .brand{ font-weight:700; letter-spacing:.5px; font-size:18px; }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--status-green); }
+  .dot.off{ background:var(--status-red); }
 
-  .statmodes{ display:flex; gap:0; margin-bottom:14px; border-radius:3px; overflow:hidden; background:var(--bg-alt); }
-  .statmode{ flex:1; text-align:center; padding:9px 0; font-size:12px; letter-spacing:1.5px; font-weight:700;
-    color:var(--fg-dim); background:transparent; border:none; cursor:pointer; }
-  .statmode.active{ background:var(--cyan); color:#0C1021; }
+  .statmodes{ display:flex; gap:0; margin-bottom:14px; border-radius:8px; overflow:hidden; background:var(--bg-alt); border:1px solid var(--border); }
+  .statmode{ flex:1; text-align:center; padding:9px 0; font-size:12px; letter-spacing:.3px; font-weight:600;
+    color:var(--fg-dim); background:transparent; border:none; cursor:pointer; transition:background .15s, color .15s; }
+  .statmode.active{ background:rgba(95,168,255,.12); color:var(--accent); }
 
   .tabs{ display:flex; gap:6px; overflow-x:auto; padding:12px 16px 4px; scrollbar-width:none; }
   .tabs::-webkit-scrollbar{ display:none; }
-  .tab{ flex:0 0 auto; padding:6px 12px; border-radius:2px; font-size:12px; letter-spacing:1px;
-    text-transform:uppercase; color:var(--fg-dim); background:var(--bg-alt); border:none; cursor:pointer; }
-  .tab.active{ color:#0C1021; font-weight:700; background:var(--fg); }
+  .tab{ flex:0 0 auto; padding:6px 12px; border-radius:6px; font-size:12px; letter-spacing:.2px;
+    color:var(--fg-dim); background:var(--bg-alt); border:1px solid var(--border); cursor:pointer; transition:background .15s, color .15s; }
+  .tab.active{ color:var(--accent); font-weight:600; background:rgba(95,168,255,.12); border-color:rgba(95,168,255,.35); }
 
   main{ flex:1; padding:8px 16px 84px; }
 
   .tabpage{ display:none; }
   .tabpage.active{ display:block; }
-  .page-title{ font-size:20px; font-weight:800; letter-spacing:-.3px; margin:6px 2px 16px; }
+  .page-title{ font-size:19px; font-weight:600; letter-spacing:-.2px; margin:6px 2px 16px; }
 
   .tabbar{ position:fixed; left:0; right:0; bottom:0; z-index:40; display:flex;
-    background:var(--bg-alt); border-top:1px solid var(--bg-card-hi);
+    background:var(--bg-alt); border-top:1px solid var(--border);
     padding-bottom:env(safe-area-inset-bottom, 0px); }
   .tab-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:2px;
-    background:none; border:none; color:var(--fg-faint); padding:9px 0 8px; cursor:pointer; }
-  .tab-item.active{ color:var(--cyan); }
-  .tab-icon{ font-size:19px; line-height:1; }
-  .tab-label{ font-size:9px; letter-spacing:.5px; text-transform:uppercase; }
+    background:none; border:none; color:var(--fg-faint); padding:9px 0 8px; cursor:pointer; transition:color .15s; }
+  .tab-item.active{ color:var(--accent); }
+  .tab-icon{ line-height:1; display:flex; align-items:center; justify-content:center; }
+  .tab-icon svg{ width:20px; height:20px; }
+  .tab-label{ font-size:9px; letter-spacing:.3px; }
 
   .more-row{ display:flex; align-items:center; justify-content:space-between; background:var(--bg-card);
-    border-radius:6px; padding:14px 16px; margin-bottom:10px; cursor:pointer; font-size:13px; font-weight:700; }
+    border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; cursor:pointer;
+    font-size:13px; font-weight:600; transition:background .15s, border-color .15s, transform .15s; }
+  .more-row:hover{ background:var(--bg-card-hi); border-color:#3A4353; }
+  .more-row:active{ transform:scale(0.99); }
   .more-row .chev{ color:var(--fg-dim); font-weight:400; font-size:12px; }
 
   .feed-section{ margin-bottom:24px; }
   .feed-pill-row{ margin:4px 2px 12px; }
-  .feed-pill{ display:inline-block; background:var(--bg-card-hi); color:var(--fg); font-size:10px; font-weight:700;
-    letter-spacing:1.5px; text-transform:uppercase; padding:6px 14px; border-radius:999px; }
+  .feed-pill{ display:inline-block; background:var(--bg-card-hi); color:var(--fg); font-size:10px; font-weight:600;
+    letter-spacing:.5px; padding:6px 14px; border-radius:999px; border:1px solid var(--border); }
   .feed-pill.dim{ background:var(--bg-alt); color:var(--fg-faint); }
   .feed-history{ opacity:.5; }
   .feed-history .tick{ opacity:.7; }
-  .card-fresh{ box-shadow:0 0 0 2px var(--yellow) inset; }
-  .tick-done{ background:var(--green) !important; color:#0C1021 !important; cursor:default; }
+  .card-fresh{ box-shadow:0 0 0 2px var(--accent) inset; }
+  .tick-done{ background:var(--status-green) !important; color:var(--bg) !important; cursor:default; }
 
   .empty{ margin-top:60px; text-align:center; color:var(--fg-dim); font-size:13px; line-height:1.7; }
   .empty b{ color:var(--fg); }
 
-  .card{ display:flex; position:relative; background:var(--bg-card); border-radius:10px; margin-bottom:12px;
-    overflow:hidden; cursor:pointer; min-height:118px; }
+  .card{ display:flex; position:relative; background:var(--bg-card); border:1px solid var(--border);
+    border-radius:12px; margin-bottom:12px; overflow:hidden; cursor:pointer; min-height:118px;
+    box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .card:hover{ transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.35); border-color:#3A4353; }
+  .card:active{ transform:translateY(0); }
   .poster-wrap{ position:relative; width:92px; flex:0 0 92px; background:var(--bg-alt); }
   .card .poster{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
   .card .status-dot{ position:absolute; top:8px; left:8px; width:9px; height:9px; border-radius:50%;
     box-shadow:0 0 0 2px rgba(0,0,0,.55); }
   .card .content{ flex:1; min-width:0; padding:12px 62px 12px 14px; display:flex; flex-direction:column; gap:7px; justify-content:center; }
   .title-pill{ align-self:flex-start; max-width:100%; display:flex; align-items:center; gap:5px;
-    border:1px solid var(--fg-faint); border-radius:999px; padding:4px 10px 4px 12px; }
-  .title-pill span{ font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--fg);
+    border:1px solid var(--border); border-radius:999px; padding:4px 10px 4px 12px; transition:border-color .15s; }
+  .title-pill:hover{ border-color:var(--accent); }
+  .title-pill span{ font-size:10.5px; letter-spacing:.2px; color:var(--fg);
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .title-pill .chev{ color:var(--fg-faint); flex:0 0 auto; }
-  .ep-big{ font-size:19px; font-weight:800; letter-spacing:.5px; line-height:1.1; }
-  .ep-sub{ font-size:11px; color:var(--fg-dim); letter-spacing:.5px; }
+  .title-pill .chev{ color:var(--fg-faint); flex:0 0 auto; display:flex; }
+  .title-pill .chev svg{ width:13px; height:13px; }
+  .ep-big{ font-size:18px; font-weight:600; letter-spacing:0; line-height:1.1; }
+  .ep-sub{ font-size:11.5px; color:var(--fg-dim); letter-spacing:0; }
   .badges{ display:flex; gap:6px; flex-wrap:wrap; }
-  .badge{ font-size:9px; font-weight:700; letter-spacing:.5px; padding:3px 8px; border-radius:4px; text-transform:uppercase; }
-  .badge.new{ background:var(--yellow); color:#0C1021; }
-  .badge.premiere{ background:transparent; border:1px solid var(--fg); color:var(--fg); }
-  .badge.latest{ background:transparent; border:1px solid var(--fg-faint); color:var(--fg-dim); }
-  .star{ color:var(--yellow); font-size:13px; flex:0 0 auto; }
-  .watchnext{ background:var(--bg-card-hi); color:var(--fg); font-size:9px; font-weight:700; letter-spacing:1px;
-    text-transform:uppercase; padding:4px 10px; border-radius:999px; flex:0 0 auto; }
+  .badge{ font-size:9px; font-weight:600; letter-spacing:.3px; padding:3px 8px; border-radius:4px; text-transform:uppercase; }
+  .badge.new{ background:rgba(95,168,255,.15); color:var(--accent); }
+  .badge.premiere{ background:transparent; border:1px solid var(--fg-dim); color:var(--fg-dim); }
+  .badge.latest{ background:transparent; border:1px solid var(--border); color:var(--fg-faint); }
+  .star{ color:var(--amber); font-size:13px; flex:0 0 auto; display:flex; }
+  .star svg{ width:13px; height:13px; }
+  .watchnext{ background:var(--bg-card-hi); color:var(--fg); font-size:9px; font-weight:600; letter-spacing:.3px;
+    padding:4px 10px; border-radius:999px; flex:0 0 auto; }
   .tick{ position:absolute; right:12px; top:50%; transform:translateY(-50%); width:44px; height:44px;
-    border-radius:50%; background:var(--fg); border:none; display:flex;
-    align-items:center; justify-content:center; cursor:pointer; color:var(--bg); font-size:19px; flex:0 0 auto; }
+    border-radius:50%; background:#E9E9EC; border:none; display:flex;
+    align-items:center; justify-content:center; cursor:pointer; color:#7A7F8C; flex:0 0 auto; transition:transform .15s; }
+  .tick svg{ width:18px; height:18px; }
   .tick:active{ transform:translateY(-50%) scale(0.93); }
 
-  .btn{ font-family:var(--mono); font-size:11px; letter-spacing:.5px; background:var(--bg-card-hi); color:var(--fg);
-    border:none; border-radius:2px; padding:6px 9px; cursor:pointer; }
-  .btn:active{ transform:translateY(1px); }
-  .btn.primary{ background:var(--cyan); color:#0C1021; font-weight:700; }
-  .btn.ghost{ background:transparent; color:var(--fg-faint); }
+  .btn{ font-family:var(--font-body); font-size:11.5px; letter-spacing:.2px; background:var(--bg-card-hi); color:var(--fg);
+    border:1px solid var(--border); border-radius:6px; padding:7px 11px; cursor:pointer; transition:background .15s, border-color .15s, transform .1s; }
+  .btn:hover{ border-color:#3A4353; }
+  .btn:active{ transform:scale(0.97); }
+  .btn.primary{ background:rgba(95,168,255,.12); color:var(--accent); font-weight:600; border-color:rgba(95,168,255,.35); }
+  .btn.primary:hover{ background:rgba(95,168,255,.18); }
+  .btn.ghost{ background:transparent; color:var(--fg-faint); border-color:transparent; }
+  .btn.ghost:hover{ background:var(--bg-card-hi); }
 
-  .fab{ position:fixed; right:18px; bottom:80px; width:54px; height:54px; border-radius:50%; background:var(--cyan);
-    color:#0C1021; font-size:26px; font-weight:700; border:none; box-shadow:0 6px 18px rgba(0,0,0,.5); z-index:30; cursor:pointer; }
+  .fab{ position:fixed; right:18px; bottom:80px; width:54px; height:54px; border-radius:50%; background:var(--accent);
+    color:var(--bg); border:none; box-shadow:0 4px 14px rgba(95,168,255,.35); z-index:30; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:transform .15s, box-shadow .15s; }
+  .fab:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(95,168,255,.45); }
+  .fab:active{ transform:translateY(0) scale(0.96); }
+  .fab svg{ width:24px; height:24px; }
 
   .overlay{ position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; }
   .overlay.open{ display:flex; }
   .ov-head{ padding:14px 16px 8px; display:flex; gap:8px; align-items:center; }
-  .ov-head h2{ font-size:14px; letter-spacing:1px; margin:0; flex:1; text-transform:uppercase; }
-  .ov-head input{ flex:1; background:var(--bg-alt); border:1px solid var(--bg-card-hi); color:var(--fg);
-    font-size:15px; padding:10px 12px; border-radius:3px; outline:none; }
-  .ov-head input:focus{ border-color:var(--cyan); }
-  .ov-close{ background:none; border:none; color:var(--fg-dim); font-size:22px; cursor:pointer; padding:4px 8px; }
+  .ov-head h2{ font-size:15px; letter-spacing:0; margin:0; flex:1; font-weight:600; font-family:var(--font-heading); }
+  .ov-head input{ flex:1; background:var(--bg-alt); border:1px solid var(--border); color:var(--fg);
+    font-size:15px; padding:10px 12px; border-radius:8px; outline:none; transition:border-color .15s; }
+  .ov-head input:focus{ border-color:var(--accent); }
+  .ov-close{ background:none; border:none; color:var(--fg-dim); cursor:pointer; padding:4px 8px; display:flex; }
+  .ov-close svg{ width:20px; height:20px; }
   .ov-body{ flex:1; overflow-y:auto; padding:8px 16px 24px; }
   .hint{ color:var(--fg-faint); font-size:11px; padding:6px 2px 14px; line-height:1.6; }
 
-  .result{ display:flex; gap:10px; background:var(--bg-card); border-radius:3px; padding:8px; margin-bottom:8px; align-items:center; }
-  .result img{ width:42px; height:60px; object-fit:cover; border-radius:2px; flex:0 0 auto; background:var(--bg-alt); }
-  .result .rtitle{ font-size:13px; font-weight:700; line-height:1.25; }
+  .result{ display:flex; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+    padding:8px; margin-bottom:8px; align-items:center; transition:border-color .15s; }
+  .result:hover{ border-color:#3A4353; }
+  .result img{ width:42px; height:60px; object-fit:cover; border-radius:5px; flex:0 0 auto; background:var(--bg-alt); }
+  .result .rtitle{ font-size:13px; font-weight:600; line-height:1.25; }
   .result .rmeta{ font-size:10px; color:var(--fg-dim); margin-top:2px; }
   .result .radd{ margin-left:auto; }
 
   .toast{ position:fixed; left:50%; bottom:148px; transform:translateX(-50%) translateY(20px); background:var(--bg-card-hi);
-    color:var(--fg); font-size:12px; padding:8px 14px; border-radius:3px; opacity:0; transition:opacity .25s, transform .25s;
-    z-index:60; letter-spacing:.5px; pointer-events:none; max-width:80vw; text-align:center; }
+    color:var(--fg); font-size:12px; padding:8px 14px; border-radius:8px; border:1px solid var(--border); opacity:0;
+    transition:opacity .25s, transform .25s; z-index:60; letter-spacing:.2px; pointer-events:none; max-width:80vw; text-align:center; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
   /* Detail sheet */
   .sheet-row{ margin-bottom:18px; }
-  .sheet-label{ font-size:11px; letter-spacing:1.5px; color:var(--fg-dim); text-transform:uppercase; margin-bottom:8px; }
+  .sheet-label{ font-size:11px; letter-spacing:.5px; color:var(--fg-dim); margin-bottom:8px; }
   .stepper{ display:flex; align-items:center; gap:10px; }
-  .stepper button{ width:38px; height:38px; border-radius:3px; background:var(--bg-card); color:var(--fg);
-    border:none; font-size:16px; cursor:pointer; }
-  .stepper input{ width:70px; text-align:center; background:var(--bg-card); border:none; color:var(--fg);
-    font-size:16px; border-radius:3px; padding:8px 0; }
+  .stepper button{ width:38px; height:38px; border-radius:8px; background:var(--bg-card); color:var(--fg);
+    border:1px solid var(--border); font-size:16px; cursor:pointer; transition:border-color .15s;
+    display:flex; align-items:center; justify-content:center; }
+  .stepper button svg{ width:16px; height:16px; }
+  .btn svg{ width:13px; height:13px; vertical-align:-2px; }
+  .stepper button:hover{ border-color:#3A4353; }
+  .stepper input{ width:70px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--fg);
+    font-size:16px; border-radius:8px; padding:8px 0; }
   .status-grid{ display:flex; flex-wrap:wrap; gap:6px; }
-  .status-pill{ padding:8px 12px; border-radius:3px; font-size:11px; letter-spacing:1px; text-transform:uppercase;
-    background:var(--bg-card); color:var(--fg-dim); border:none; cursor:pointer; }
-  .status-pill.sel{ color:#0C1021; font-weight:700; }
-  .stars{ display:flex; gap:4px; font-size:22px; }
-  .stars span{ cursor:pointer; color:var(--fg-faint); }
-  .stars span.on{ color:var(--yellow); }
-  textarea.notes{ width:100%; min-height:80px; background:var(--bg-card); border:1px solid var(--bg-card-hi);
-    color:var(--fg); border-radius:3px; padding:10px; font-size:13px; resize:vertical; outline:none; }
-  textarea.notes:focus{ border-color:var(--cyan); }
-  .fav-toggle{ display:flex; align-items:center; gap:8px; background:var(--bg-card); border:none; color:var(--fg);
-    padding:10px 14px; border-radius:3px; font-size:13px; cursor:pointer; }
+  .status-pill{ padding:8px 12px; border-radius:8px; font-size:11px; letter-spacing:.2px;
+    background:var(--bg-card); color:var(--fg-dim); border:1px solid var(--border); cursor:pointer; transition:border-color .15s; }
+  .status-pill.sel{ color:var(--bg); font-weight:600; border-color:transparent; }
+  .stars{ display:flex; gap:4px; }
+  .stars span{ cursor:pointer; color:var(--fg-faint); display:flex; }
+  .stars span svg{ width:20px; height:20px; }
+  .stars span.on{ color:var(--amber); }
+  textarea.notes{ width:100%; min-height:80px; background:var(--bg-card); border:1px solid var(--border);
+    color:var(--fg); border-radius:8px; padding:10px; font-size:13px; resize:vertical; outline:none; transition:border-color .15s; }
+  textarea.notes:focus{ border-color:var(--accent); }
+  .fav-toggle{ display:flex; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--border); color:var(--fg);
+    padding:10px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:border-color .15s; }
   .fav-toggle .star{ font-size:16px; color:var(--fg-faint); }
-  .fav-toggle.on .star{ color:var(--yellow); }
-  .danger{ background:rgba(235,87,87,.12); color:var(--red); border:none; padding:10px 14px; border-radius:3px;
-    font-size:12px; letter-spacing:.5px; cursor:pointer; width:100%; }
+  .fav-toggle .star svg{ width:16px; height:16px; }
+  .fav-toggle.on .star{ color:var(--amber); }
+  .danger{ background:rgba(229,83,75,.12); color:var(--status-red); border:1px solid rgba(229,83,75,.3); padding:10px 14px; border-radius:8px;
+    font-size:12px; letter-spacing:.2px; cursor:pointer; width:100%; transition:background .15s; }
+  .danger:hover{ background:rgba(229,83,75,.18); }
 
   /* Import overlay */
   .import-step{ display:none; }
   .import-step.active{ display:block; }
-  .filebtn{ display:inline-block; background:var(--bg-card); color:var(--fg); padding:14px 18px; border-radius:3px;
-    font-size:13px; letter-spacing:.5px; cursor:pointer; border:1px dashed var(--fg-faint); text-align:center; width:100%; }
+  .filebtn{ display:inline-block; background:var(--bg-card); color:var(--fg); padding:14px 18px; border-radius:8px;
+    font-size:13px; letter-spacing:.2px; cursor:pointer; border:1px dashed var(--border); text-align:center; width:100%; transition:border-color .15s; }
+  .filebtn:hover{ border-color:var(--accent); }
   .progress-bar{ height:8px; background:var(--bg-card); border-radius:4px; overflow:hidden; margin:14px 0 8px; }
-  .progress-bar > div{ height:100%; background:var(--cyan); width:0%; transition:width .2s; }
+  .progress-bar > div{ height:100%; background:var(--accent); width:0%; transition:width .2s; }
   .stat-row{ display:flex; gap:14px; margin:10px 0; font-size:12px; color:var(--fg-dim); flex-wrap:wrap; }
   .stat-row b{ color:var(--fg); }
-  .skiplist{ max-height:240px; overflow-y:auto; background:var(--bg-card); border-radius:3px; padding:10px; font-size:11px; color:var(--fg-dim); margin-top:10px; }
-  .skiplist div{ padding:3px 0; border-bottom:1px solid var(--bg-card-hi); }
+  .skiplist{ max-height:240px; overflow-y:auto; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:10px; font-size:11px; color:var(--fg-dim); margin-top:10px; }
+  .skiplist div{ padding:3px 0; border-bottom:1px solid var(--border); }
 
   /* Stats */
-  .hero-card{ background:var(--bg-card); border-radius:8px; padding:18px; margin-bottom:20px; }
-  .hero-title{ font-size:14px; font-weight:700; margin-bottom:14px; }
+  .hero-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:20px; }
+  .hero-title{ font-size:14px; font-weight:600; margin-bottom:14px; font-family:var(--font-heading); }
   .hero-numbers{ display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px; }
-  .hero-numbers .hn{ font-size:11px; color:var(--fg-dim); letter-spacing:.5px; }
-  .hero-numbers .hn b{ display:block; font-size:26px; color:var(--fg); font-weight:800; letter-spacing:0; }
-  .hero-sub{ font-size:11px; color:var(--fg-dim); border-top:1px solid var(--bg-card-hi); padding-top:10px; }
+  .hero-numbers .hn{ font-size:11px; color:var(--fg-dim); letter-spacing:.2px; }
+  .hero-numbers .hn b{ display:block; font-size:26px; color:var(--fg); font-weight:600; letter-spacing:0; }
+  .hero-sub{ font-size:11px; color:var(--fg-dim); border-top:1px solid var(--border); padding-top:10px; }
   .stat-cards{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
   .stat-cards .stat-card .num{ font-size:18px; }
-  .stat-card{ background:var(--bg-card); border-radius:6px; padding:14px; }
-  .stat-card .num{ font-size:22px; font-weight:800; }
-  .stat-card .lbl{ font-size:10px; color:var(--fg-dim); letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
-  .section-title{ font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--fg-dim); margin:18px 0 10px; }
+  .stat-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:14px; transition:border-color .15s; }
+  .stat-card:hover{ border-color:#3A4353; }
+  .stat-card .num{ font-size:22px; font-weight:600; }
+  .stat-card .lbl{ font-size:10px; color:var(--fg-dim); letter-spacing:.3px; margin-top:4px; }
+  .section-title{ font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--fg-dim); margin:18px 0 10px; font-weight:600; }
   .genre-row{ display:flex; flex-wrap:wrap; gap:6px; }
-  .genre-chip{ background:var(--bg-card); color:var(--fg); font-size:11px; padding:5px 10px; border-radius:999px; }
+  .genre-chip{ background:var(--bg-card); color:var(--fg); font-size:11px; padding:5px 10px; border-radius:999px; border:1px solid var(--border); }
   .bar-chart{ display:flex; align-items:flex-end; gap:5px; height:100px; }
-  .bar-chart .bar{ flex:1; background:var(--cyan); border-radius:2px 2px 0 0; min-height:2px; position:relative; }
+  .bar-chart .bar{ flex:1; background:var(--accent); border-radius:3px 3px 0 0; min-height:2px; position:relative; opacity:.85; }
   .bar-chart .bar-lbl{ position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:8px; color:var(--fg-faint); }
   .badge-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .badge-cell{ background:var(--bg-card); border-radius:6px; padding:10px; font-size:11px; display:flex; flex-direction:column; gap:4px; }
-  .badge-cell.earned{ background:rgba(111,207,151,.12); border:1px solid var(--green); }
-  .badge-cell .bname{ font-weight:700; }
+  .badge-cell{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:10px; font-size:11px; display:flex; flex-direction:column; gap:4px; }
+  .badge-cell.earned{ background:rgba(87,171,90,.1); border-color:var(--status-green); }
+  .badge-cell .bname{ font-weight:600; }
   .badge-cell .bdesc{ color:var(--fg-dim); font-size:10px; }
 
   /* Discover results grid */
   .disc-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-  .disc-card{ background:var(--bg-card); border-radius:6px; overflow:hidden; position:relative; }
+  .disc-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; overflow:hidden; position:relative; transition:border-color .15s; }
+  .disc-card:hover{ border-color:#3A4353; }
   .disc-card img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
   .disc-card .dc-title{ font-size:10px; padding:6px; line-height:1.3; }
   .disc-card .dc-add{ position:absolute; top:5px; right:5px; width:26px; height:26px; border-radius:50%;
-    background:var(--cyan); color:#0C1021; border:none; font-size:14px; font-weight:700; cursor:pointer; }
+    background:var(--accent); color:var(--bg); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .disc-card .dc-add svg{ width:14px; height:14px; }
   .disc-card .dc-add.added{ background:var(--bg-card-hi); color:var(--fg-faint); }
-  .genre-pick{ padding:5px 10px; font-size:10px; border-radius:999px; background:var(--bg-alt); color:var(--fg-dim); border:none; cursor:pointer; flex:0 0 auto; }
-  .genre-pick.active{ background:var(--yellow); color:#0C1021; }
+  .genre-pick{ padding:5px 10px; font-size:10px; border-radius:999px; background:var(--bg-alt); color:var(--fg-dim); border:1px solid var(--border); cursor:pointer; flex:0 0 auto; }
+  .genre-pick.active{ background:rgba(212,167,44,.15); color:var(--amber); border-color:rgba(212,167,44,.4); }
 
   /* Lists */
   .list-row{ display:flex; align-items:center; justify-content:space-between; background:var(--bg-card);
-    border-radius:6px; padding:12px 14px; margin-bottom:8px; cursor:pointer; }
-  .list-row .lname{ font-weight:700; font-size:13px; }
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+  .list-row:hover{ border-color:#3A4353; }
+  .list-row .lname{ font-weight:600; font-size:13px; }
   .list-row .lcount{ font-size:11px; color:var(--fg-dim); }
-  .member-row{ display:flex; align-items:center; gap:10px; background:var(--bg-card); border-radius:6px; padding:8px; margin-bottom:8px; }
-  .member-row img{ width:36px; height:52px; object-fit:cover; border-radius:3px; }
-  .member-row .mtitle{ flex:1; font-size:12px; font-weight:700; }
+  .member-row{ display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
+  .member-row img{ width:36px; height:52px; object-fit:cover; border-radius:5px; }
+  .member-row .mtitle{ flex:1; font-size:12px; font-weight:600; }
 
-  @media (prefers-reduced-motion: reduce){ #clock .blink{ animation:none; } .toast{ transition:none; } }
+  /* Episode Detail + Show Detail shared hero */
+  .ep-hero{ position:relative; height:190px; background-size:cover; background-position:center;
+    background-color:var(--bg-card); background-repeat:no-repeat; flex:0 0 auto; border-bottom:1px solid var(--border); }
+  .ep-hero-close, .ep-hero-menu{ position:absolute; top:14px; width:34px; height:34px; border-radius:50%;
+    background:rgba(13,17,23,.7); border:1px solid rgba(255,255,255,.1); color:var(--fg); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; }
+  .ep-hero-close svg, .ep-hero-menu svg{ width:17px; height:17px; }
+  .ep-hero-close{ left:14px; }
+  .ep-hero-menu{ right:14px; }
+
+  /* Episode Detail body */
+  .ep-big-detail{ font-size:19px; font-weight:600; margin-top:6px; }
+  .ep-sub-detail{ font-size:13px; color:var(--fg-dim); margin-top:2px; }
+  .ep-meta-row{ display:flex; align-items:center; justify-content:space-between; margin:16px 0; }
+  .ep-meta-item{ font-size:12px; color:var(--fg-dim); }
+  .tick.static{ position:static; transform:none; }
+  .tick.static:active{ transform:scale(0.93); }
+  .stream-links{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .stream-btn{ display:inline-block; background:var(--bg-card); color:var(--fg); font-size:12px; font-weight:600;
+    padding:9px 14px; border-radius:8px; border:1px solid var(--border); text-decoration:none; transition:border-color .15s; }
+  .stream-btn:hover{ border-color:var(--accent); }
+  .ep-description{ font-size:13px; line-height:1.7; color:var(--fg-dim); white-space:pre-line; margin-bottom:10px; }
+
+  /* Show Detail body */
+  .cast-row{ display:flex; gap:12px; overflow-x:auto; padding-bottom:6px; margin-bottom:16px; scrollbar-width:none; }
+  .cast-row::-webkit-scrollbar{ display:none; }
+  .cast-item{ flex:0 0 auto; width:64px; text-align:center; }
+  .cast-item img{ width:56px; height:56px; border-radius:50%; object-fit:cover; background:var(--bg-card); border:1px solid var(--border); }
+  .cast-item .cname{ font-size:10px; font-weight:600; margin-top:5px; line-height:1.25; }
+  .cast-item .cva{ font-size:9px; color:var(--fg-dim); margin-top:1px; line-height:1.2; }
+  .show-info-line{ font-size:12px; color:var(--fg-dim); margin-bottom:6px; }
+  .show-score{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--amber); font-weight:600; margin-bottom:14px; }
+  .show-score svg{ width:13px; height:13px; }
+  .trailer-btn{ display:flex; align-items:center; gap:12px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; margin:14px 0; text-decoration:none; color:var(--fg); transition:border-color .15s; }
+  .trailer-btn:hover{ border-color:var(--accent); }
+  .trailer-btn .tplay{ width:34px; height:34px; border-radius:50%; background:var(--accent); color:var(--bg);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .trailer-btn .tplay svg{ width:14px; height:14px; }
+  .trailer-btn .ttext{ font-size:12px; font-weight:600; }
+  .meta-icons-row{ display:flex; gap:18px; flex-wrap:wrap; font-size:11px; color:var(--fg-dim); margin:14px 0; }
+  .meta-icons-row span{ display:flex; align-items:center; gap:5px; }
+  .meta-icons-row svg{ width:14px; height:14px; flex:0 0 auto; }
+  .ep-row{ display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px;
+    padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+  .ep-row:hover{ border-color:#3A4353; }
+  .ep-row .ernum{ font-size:12px; font-weight:600; width:34px; flex:0 0 auto; font-family:var(--font-heading); }
+  .ep-row .ertitle{ flex:1; font-size:12px; color:var(--fg-dim); }
+  .ep-row.watched .ertitle{ color:var(--fg); }
+  .ep-row .ertick{ width:26px; height:26px; border-radius:50%; background:#E9E9EC; color:#7A7F8C; border:none;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
+  .ep-row .ertick svg{ width:13px; height:13px; }
+  .ep-row.watched .ertick{ background:var(--status-green); color:var(--bg); }
+
+  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } .card, .more-row, .fab{ transition:none; } }
 </style>
 </head>
 <body>
@@ -263,28 +355,28 @@
     <div id="statsBody"></div>
 
     <div class="section-title">Lists</div>
-    <div class="more-row" id="moreListsBtn"><span id="listsPreviewLabel">Custom Lists</span><span class="chev">›</span></div>
+    <div class="more-row" id="moreListsBtn"><span id="listsPreviewLabel">Custom Lists</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
 
     <div class="section-title">Manage</div>
-    <div class="more-row" id="moreImportBtn"><span>Import from TV Time</span><span class="chev">›</span></div>
-    <div class="more-row" id="moreSequelsBtn"><span>Find Missing Sequels</span><span class="chev">›</span></div>
+    <div class="more-row" id="moreImportBtn"><span>Import from TV Time</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+    <div class="more-row" id="moreSequelsBtn"><span>Find Missing Sequels</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
     <div class="more-row" id="moreNotifyBtn"><span>Episode Alerts</span><span class="chev" id="moreNotifyStatus">Off</span></div>
   </div>
 </main>
 
 <nav class="tabbar">
-  <button class="tab-item active" data-tab="anime"><span class="tab-icon">📺</span><span class="tab-label">Anime</span></button>
-  <button class="tab-item" data-tab="reading"><span class="tab-icon">📖</span><span class="tab-label">Reading</span></button>
-  <button class="tab-item" data-tab="discover"><span class="tab-icon">🔎</span><span class="tab-label">Discover</span></button>
-  <button class="tab-item" data-tab="more"><span class="tab-icon">⋯</span><span class="tab-label">More</span></button>
+  <button class="tab-item active" data-tab="anime"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg></span><span class="tab-label">Anime</span></button>
+  <button class="tab-item" data-tab="reading"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span><span class="tab-label">Reading</span></button>
+  <button class="tab-item" data-tab="discover"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="tab-label">Discover</span></button>
+  <button class="tab-item" data-tab="more"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span class="tab-label">More</span></button>
 </nav>
-<button class="fab" id="fabAdd" aria-label="Add">+</button>
+<button class="fab" id="fabAdd" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <!-- search overlay -->
 <div class="overlay" id="searchOverlay">
   <div class="ov-head">
     <input id="searchInput" type="text" placeholder="Search…" autocomplete="off" />
-    <button class="ov-close" id="closeSearch">×</button>
+    <button class="ov-close" id="closeSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="hint" id="searchHint">Type at least 2 characters. Needs internet the first time you add a title.</div>
   <div class="ov-body" id="results"></div>
@@ -294,16 +386,53 @@
 <div class="overlay" id="detailOverlay">
   <div class="ov-head">
     <h2 id="detailTitle">Title</h2>
-    <button class="ov-close" id="closeDetail">×</button>
+    <button class="ov-close" id="closeDetail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body" id="detailBody"></div>
+</div>
+
+<!-- episode detail overlay -->
+<div class="overlay" id="episodeOverlay">
+  <div class="ep-hero" id="epHero">
+    <button class="ep-hero-close" id="closeEpisode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div class="ov-body" style="padding-top:16px;">
+    <div class="title-pill" id="epShowPill"><span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+    <div class="ep-big-detail" id="epBigLine"></div>
+    <div class="ep-sub-detail" id="epSubLine"></div>
+    <div class="ep-meta-row">
+      <span class="ep-meta-item" id="epStatusLine"></span>
+      <button class="tick static" id="epTickBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+    </div>
+    <div class="section-title" id="epStreamingTitle" style="display:none;">Where to watch</div>
+    <div id="epStreamingLinks" class="stream-links"></div>
+    <div class="section-title">About the series</div>
+    <div class="ep-description" id="epDescription"></div>
+  </div>
+</div>
+
+<!-- show detail overlay -->
+<div class="overlay" id="showDetailOverlay">
+  <div class="ep-hero" id="showHero">
+    <button class="ep-hero-close" id="closeShowDetail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="ep-hero-menu" id="showMenuBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+  </div>
+  <div class="ov-body" style="padding-top:16px;">
+    <h2 id="showDetailTitle" style="font-size:19px; margin:0 0 4px;"></h2>
+    <div class="tabs" id="showDetailTabs" style="padding:8px 0 14px;">
+      <button class="tab active" data-sdt="about">About</button>
+      <button class="tab" data-sdt="episodes">Episodes</button>
+    </div>
+    <div id="showDetailAbout"></div>
+    <div id="showDetailEpisodes" style="display:none;"></div>
+  </div>
 </div>
 
 <!-- import overlay -->
 <div class="overlay" id="importOverlay">
   <div class="ov-head">
     <h2>TV Time Import</h2>
-    <button class="ov-close" id="closeImport">×</button>
+    <button class="ov-close" id="closeImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div class="import-step active" id="importStep1">
@@ -357,7 +486,7 @@
 
   <div class="ov-head">
     <h2 id="listsHeadTitle">Custom Lists</h2>
-    <button class="ov-close" id="closeLists">×</button>
+    <button class="ov-close" id="closeLists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div id="listsHome">
@@ -368,7 +497,7 @@
       <div id="listsList"></div>
     </div>
     <div id="listDetail" style="display:none;">
-      <button class="btn ghost" id="backToLists" style="margin-bottom:12px;">← All lists</button>
+      <button class="btn ghost" id="backToLists" style="margin-bottom:12px; display:inline-flex; align-items:center; gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> All lists</button>
       <div id="listMembers"></div>
     </div>
     <div id="listPicker" style="display:none;">
@@ -387,7 +516,7 @@
 <div class="overlay" id="sequelsOverlay">
   <div class="ov-head">
     <h2>Missing Sequels</h2>
-    <button class="ov-close" id="closeSequels">×</button>
+    <button class="ov-close" id="closeSequels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div class="hint">Checks every anime you've marked Completed against AniList's own sequel data, and shows any next season you haven't added yet — the same idea as the community "Sequel Finder" tool AniList users built for this exact problem.</div>
@@ -410,7 +539,7 @@
     anime:   [["watching","Watching"],["planned","Plan to Watch"],["completed","Completed"],["onhold","On Hold"],["dropped","Dropped"]],
     reading: [["reading","Reading"],["planned","Plan to Read"],["completed","Completed"],["onhold","On Hold"],["dropped","Dropped"]]
   };
-  const STATUS_COLOR = { watching:"cyan", reading:"cyan", planned:"yellow", completed:"green", onhold:"orange", dropped:"magenta" };
+  const STATUS_COLOR = { watching:"accent", reading:"accent", planned:"amber", completed:"status-green", onhold:"status-orange", dropped:"status-red" };
 
   // ---------- storage ----------
   function loadList(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; } }
@@ -477,6 +606,18 @@
     return json.data;
   }
 
+  // Shared extra fields needed for the Episode Detail and Show Detail
+  // views. Kept as one fragment-like string so every query that pulls
+  // media data stays in sync with what those views expect.
+  const MEDIA_DETAIL_FIELDS = `
+    bannerImage
+    description(asHtml: false)
+    averageScore
+    popularity
+    externalLinks { site url type }
+    trailer { id site thumbnail }
+  `;
+
   const SEARCH_QUERY = `
     query ($search: String, $type: MediaType) {
       Page(page: 1, perPage: 10) {
@@ -484,7 +625,8 @@
           id title { romaji english } coverImage { medium } format status
           episodes chapters volumes countryOfOrigin duration genres
           nextAiringEpisode { airingAt episode }
-          streamingEpisodes { title }
+          streamingEpisodes { title thumbnail }
+          ${MEDIA_DETAIL_FIELDS}
         }
       }
     }`;
@@ -492,7 +634,12 @@
   const REFRESH_QUERY = `
     query ($ids: [Int]) {
       Page(page: 1, perPage: 50) {
-        media(id_in: $ids) { id status episodes chapters volumes duration genres nextAiringEpisode { airingAt episode } streamingEpisodes { title } }
+        media(id_in: $ids) {
+          id status episodes chapters volumes duration genres
+          nextAiringEpisode { airingAt episode }
+          streamingEpisodes { title thumbnail }
+          ${MEDIA_DETAIL_FIELDS}
+        }
       }
     }`;
 
@@ -501,7 +648,9 @@
       Page(page: 1, perPage: 24) {
         media(type: $type, sort: $sort, season: $season, seasonYear: $seasonYear, genre: $genre) {
           id title { romaji english } coverImage { medium } format status episodes chapters volumes
-          countryOfOrigin duration genres nextAiringEpisode { airingAt episode } streamingEpisodes { title }
+          countryOfOrigin duration genres nextAiringEpisode { airingAt episode }
+          streamingEpisodes { title thumbnail }
+          ${MEDIA_DETAIL_FIELDS}
         }
       }
     }`;
@@ -524,14 +673,38 @@
               id type format status episodes chapters volumes countryOfOrigin duration genres
               title { romaji english } coverImage { medium }
               nextAiringEpisode { airingAt episode }
-              streamingEpisodes { title }
+              streamingEpisodes { title thumbnail }
+              ${MEDIA_DETAIL_FIELDS}
             }
           }
         }
       }
     }`;
 
-  // ---------- helpers ----------
+  // Fetched on demand only when the Show Detail page's About tab is opened
+  // for the first time (not part of the main list/search queries, to keep
+  // those light) — a small cast list with voice actors.
+  const CHARACTERS_QUERY = `
+    query ($id: Int) {
+      Media(id: $id) {
+        characters(sort: ROLE, perPage: 6) {
+          edges {
+            role
+            node { name { full } image { medium } }
+            voiceActors(language: JAPANESE) { name { full } }
+          }
+        }
+      }
+    }`;
+
+  // Strips AniList's lightweight markup (mostly <br>, <i>, <b>) from
+  // description text down to plain, safe text for display.
+  function cleanDescription(desc){
+    if(!desc) return "";
+    return desc.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, "").trim();
+  }
+
+
   function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
   function originLabel(country, format){
     if(country === "KR") return "Manhwa";
@@ -594,6 +767,9 @@
     list.push({
       id: m.id, type,
       romaji: m.title.romaji, english: m.title.english, cover: m.coverImage.medium, customCover: null,
+      bannerImage: m.bannerImage || null, description: cleanDescription(m.description),
+      averageScore: m.averageScore || null, popularity: m.popularity || null,
+      externalLinks: m.externalLinks || [], trailer: m.trailer || null, characters: null,
       format: m.format, countryOfOrigin: m.countryOfOrigin || null,
       genres: m.genres || [], duration: m.duration || null,
       totalEpisodes: m.episodes || null, totalChapters: m.chapters || null, totalVolumes: m.volumes || null,
@@ -601,6 +777,7 @@
       progress: 0, volumeProgress: 0,
       nextAiringEpisode: m.nextAiringEpisode || null,
       episodeTitles: (m.streamingEpisodes || []).map(e => e.title),
+      episodeThumbnails: (m.streamingEpisodes || []).map(e => e.thumbnail),
       favorite: false, rating: null, notes: "",
       history: [], updatedAt: Date.now()
     });
@@ -629,6 +806,30 @@
     saveList();
   }
 
+  // Jumps progress to a specific episode/chapter number rather than +/-1 —
+  // used by the Episode Detail tick and the Episodes tab list, since those
+  // let you tap any episode directly rather than only the next one in line.
+  // markWatched=true ensures progress reaches at least epNumber (marking
+  // everything up to and including it watched); false rewinds progress to
+  // just before epNumber (unmarking it and anything after).
+  function setProgressToEpisode(item, epNumber, markWatched){
+    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    let target = markWatched ? epNumber : epNumber - 1;
+    if(cap) target = Math.min(target, cap);
+    target = Math.max(0, target);
+    const prev = item.progress;
+    item.progress = target;
+    if(!item.history) item.history = [];
+    if(target > prev){
+      item.history.push({ ep: target, watchedAt: new Date().toISOString() });
+    }else if(target < prev){
+      item.history = item.history.filter(h => h.ep <= target);
+    }
+    if(cap && item.progress >= cap) item.status = "completed";
+    else if(item.status === "completed") item.status = item.type === "anime" ? "watching" : "reading";
+    saveList();
+  }
+
   // ---------- refresh airing / metadata ----------
   let refreshing = false;
   async function refreshAiring(){
@@ -650,7 +851,16 @@
         item.genres = m.genres && m.genres.length ? m.genres : item.genres;
         item.duration = m.duration || item.duration;
         item.nextAiringEpisode = m.nextAiringEpisode || null;
-        if(m.streamingEpisodes && m.streamingEpisodes.length) item.episodeTitles = m.streamingEpisodes.map(e => e.title);
+        if(m.streamingEpisodes && m.streamingEpisodes.length){
+          item.episodeTitles = m.streamingEpisodes.map(e => e.title);
+          item.episodeThumbnails = m.streamingEpisodes.map(e => e.thumbnail);
+        }
+        item.bannerImage = m.bannerImage || item.bannerImage;
+        item.description = m.description ? cleanDescription(m.description) : item.description;
+        item.averageScore = m.averageScore || item.averageScore;
+        item.popularity = m.popularity || item.popularity;
+        item.externalLinks = (m.externalLinks && m.externalLinks.length) ? m.externalLinks : item.externalLinks;
+        item.trailer = m.trailer || item.trailer;
         item.updatedAt = Date.now();
         const after = availableCount(item);
         if(before !== null && after !== null && after > before && item.progress < after){
@@ -762,14 +972,14 @@
       <span class="status-dot" style="background:var(--${dotColor})"></span>
       <div class="content">
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <div class="title-pill"><span>${escapeHtml(title)}</span><span class="chev">›</span></div>
-          ${item.favorite ? '<span class="star">★</span>' : ''}
+          <div class="title-pill" data-act="showdetail"><span>${escapeHtml(title)}</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+          ${item.favorite ? '<span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span>' : ''}
         </div>
         <div class="ep-big">${epBig}</div>
         <div class="ep-sub">${escapeHtml(epSub)}</div>
         <div class="badges">${badges.map(b => `<span class="badge ${b.cls}">${b.label}</span>`).join('')}</div>
       </div>
-      <button class="tick ${opts.historical ? 'tick-done' : ''}" data-act="tick" aria-label="Mark next ${item.type === 'anime' ? 'episode' : 'chapter'} watched" ${opts.historical ? 'disabled' : ''}>✓</button>`;
+      <button class="tick ${opts.historical ? 'tick-done' : ''}" data-act="tick" aria-label="Mark next ${item.type === 'anime' ? 'episode' : 'chapter'} watched" ${opts.historical ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
     if(!opts.historical){
       card.querySelector('[data-act="tick"]').addEventListener("click", (e) => {
         e.stopPropagation();
@@ -777,7 +987,14 @@
         render();
       });
     }
-    card.addEventListener("click", () => openDetail(item));
+    card.querySelector('[data-act="showdetail"]').addEventListener("click", (e) => {
+      e.stopPropagation();
+      openShowDetail(item);
+    });
+    const epNumberForDetail = opts.historical
+      ? Math.max(1, item.progress)
+      : (item.status === "completed" ? (cap || item.progress || 1) : item.progress + 1);
+    card.addEventListener("click", () => openEpisodeDetail(item, epNumberForDetail));
     return card;
   }
 
@@ -958,6 +1175,192 @@
   });
 
   // ---------- detail overlay ----------
+  // ---------- episode detail overlay ----------
+  const episodeOverlay = $("#episodeOverlay");
+  let currentEpisodeItem = null;
+  let currentEpisodeNumber = 1;
+
+  function openEpisodeDetail(item, epNumber){
+    currentEpisodeItem = item;
+    currentEpisodeNumber = Math.max(1, epNumber);
+    renderEpisodeDetail();
+    episodeOverlay.classList.add("open");
+  }
+
+  function renderEpisodeDetail(){
+    const item = currentEpisodeItem;
+    const epNumber = currentEpisodeNumber;
+    if(!item) return;
+    const title = item.english || item.romaji;
+
+    const heroImg = (item.episodeThumbnails && item.episodeThumbnails[epNumber-1]) || item.bannerImage || item.customCover || item.cover || "";
+    $("#epHero").style.backgroundImage = heroImg ? `url('${heroImg}')` : "none";
+
+    const pill = $("#epShowPill");
+    pill.querySelector("span").textContent = title;
+    pill.onclick = (e) => {
+      e.stopPropagation();
+      episodeOverlay.classList.remove("open");
+      openShowDetail(item);
+    };
+
+    if(item.type === "anime"){
+      $("#epBigLine").textContent = `S${item.season || 1} | E${epNumber}`;
+      const knownTitle = item.episodeTitles && item.episodeTitles[epNumber-1];
+      $("#epSubLine").textContent = knownTitle || `Episode ${epNumber}`;
+    }else{
+      $("#epBigLine").textContent = `CH ${epNumber}`;
+      $("#epSubLine").textContent = `Chapter ${epNumber}`;
+    }
+
+    const watched = epNumber <= item.progress;
+    let statusText = watched ? "Watched" : "Not watched";
+    if(!watched && item.type === "anime" && item.nextAiringEpisode && item.nextAiringEpisode.episode === epNumber){
+      const d = new Date(item.nextAiringEpisode.airingAt * 1000);
+      statusText = `Airs ${d.toLocaleDateString(undefined, { month:"short", day:"numeric" })}`;
+    }
+    $("#epStatusLine").textContent = statusText;
+
+    const tickBtn = $("#epTickBtn");
+    tickBtn.classList.toggle("tick-done", watched);
+    tickBtn.onclick = () => {
+      setProgressToEpisode(item, epNumber, !watched);
+      render();
+      renderEpisodeDetail();
+    };
+
+    const streaming = (item.externalLinks || []).filter(l => l.type === "STREAMING");
+    if(streaming.length){
+      $("#epStreamingTitle").style.display = "";
+      $("#epStreamingLinks").innerHTML = streaming.map(l =>
+        `<a class="stream-btn" href="${l.url}" target="_blank" rel="noopener">${escapeHtml(l.site)}</a>`
+      ).join("");
+    }else{
+      $("#epStreamingTitle").style.display = "none";
+      $("#epStreamingLinks").innerHTML = "";
+    }
+
+    $("#epDescription").textContent = item.description || "No synopsis available for this series.";
+  }
+  $("#closeEpisode").addEventListener("click", () => { episodeOverlay.classList.remove("open"); render(); });
+
+  // ---------- show detail overlay ----------
+  const showDetailOverlay = $("#showDetailOverlay");
+  let currentShowItem = null;
+  let showDetailTab = "about";
+
+  function openShowDetail(item){
+    currentShowItem = item;
+    showDetailTab = "about";
+    $("#showDetailTabs").querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.sdt === "about"));
+    $("#showDetailAbout").style.display = "";
+    $("#showDetailEpisodes").style.display = "none";
+    $("#showDetailTitle").textContent = item.english || item.romaji;
+    const hero = item.bannerImage || item.customCover || item.cover || "";
+    $("#showHero").style.backgroundImage = hero ? `url('${hero}')` : "none";
+    renderShowDetailAbout(item);
+    showDetailOverlay.classList.add("open");
+  }
+  $("#closeShowDetail").addEventListener("click", () => { showDetailOverlay.classList.remove("open"); render(); });
+  $("#showMenuBtn").addEventListener("click", () => {
+    if(currentShowItem) openDetail(currentShowItem);
+  });
+
+  $("#showDetailTabs").querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => {
+    $("#showDetailTabs").querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    showDetailTab = btn.dataset.sdt;
+    $("#showDetailAbout").style.display = showDetailTab === "about" ? "" : "none";
+    $("#showDetailEpisodes").style.display = showDetailTab === "episodes" ? "" : "none";
+    if(showDetailTab === "episodes") renderShowDetailEpisodes(currentShowItem);
+  }));
+
+  async function renderShowDetailAbout(item){
+    const el = $("#showDetailAbout");
+    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const yearLine = [item.format, item.mediaStatus === "RELEASING" ? "Releasing" : item.mediaStatus === "FINISHED" ? "Finished" : item.mediaStatus, (item.genres||[]).slice(0,3).join(", ")].filter(Boolean).join(" · ");
+
+    let metaIcons = "";
+    if(item.type === "anime" && item.nextAiringEpisode){
+      const d = new Date(item.nextAiringEpisode.airingAt * 1000);
+      metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> ${d.toLocaleDateString(undefined,{weekday:"short"})} | ${d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</span>`;
+    }
+    if(item.duration) metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${item.duration} min</span>`;
+    if(item.popularity) metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ${item.popularity.toLocaleString()} tracking on AniList</span>`;
+
+    el.innerHTML = `
+      <div class="cast-row" id="castRow"><div class="hint">Loading cast…</div></div>
+      <div class="show-info-line">${escapeHtml(yearLine)}${cap ? " · " + cap + (item.type==="anime"?" episodes":" chapters") : ""}</div>
+      ${item.averageScore ? `<div class="show-score"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg> ${(item.averageScore/10).toFixed(1)}/10 on AniList</div>` : ""}
+      <div class="ep-description">${escapeHtml(item.description || "No synopsis available.")}</div>
+      ${item.trailer && item.trailer.site === "youtube" ? `
+        <a class="trailer-btn" href="https://www.youtube.com/watch?v=${item.trailer.id}" target="_blank" rel="noopener">
+          <span class="tplay"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg></span><span class="ttext">Watch trailer</span>
+        </a>` : ""}
+      <div class="meta-icons-row">${metaIcons}</div>
+    `;
+
+    if(item.characters){
+      renderCastRow(item.characters);
+    }else if(navigator.onLine){
+      try{
+        const data = await anilistQuery(CHARACTERS_QUERY, { id: item.id });
+        const edges = (data.Media && data.Media.characters && data.Media.characters.edges) || [];
+        item.characters = edges.map(e => ({
+          name: e.node.name.full,
+          image: e.node.image.medium,
+          va: (e.voiceActors && e.voiceActors[0]) ? e.voiceActors[0].name.full : null
+        }));
+        saveList();
+        if(currentShowItem === item) renderCastRow(item.characters);
+      }catch(e){
+        if(currentShowItem === item) $("#castRow").innerHTML = `<div class="hint">Couldn't load cast.</div>`;
+      }
+    }else{
+      $("#castRow").innerHTML = `<div class="hint">Connect to the internet to load cast info.</div>`;
+    }
+  }
+
+  function renderCastRow(characters){
+    const el = $("#castRow");
+    if(!characters.length){ el.innerHTML = `<div class="hint">No cast data available.</div>`; return; }
+    el.innerHTML = characters.map(c => `
+      <div class="cast-item">
+        <img src="${c.image}" alt="" loading="lazy" />
+        <div class="cname">${escapeHtml(c.name)}</div>
+        ${c.va ? `<div class="cva">${escapeHtml(c.va)}</div>` : ""}
+      </div>`).join("");
+  }
+
+  function renderShowDetailEpisodes(item){
+    const el = $("#showDetailEpisodes");
+    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const total = Math.min(cap || Math.max(item.progress + 5, 24), 300);
+    if(!total){ el.innerHTML = `<div class="hint">Episode count unknown for this title yet.</div>`; return; }
+    el.innerHTML = "";
+    for(let n = 1; n <= total; n++){
+      const watched = n <= item.progress;
+      const knownTitle = item.type === "anime" && item.episodeTitles && item.episodeTitles[n-1];
+      const row = document.createElement("div");
+      row.className = "ep-row" + (watched ? " watched" : "");
+      row.innerHTML = `
+        <span class="ernum">${item.type === "anime" ? "E" : "CH"}${n}</span>
+        <span class="ertitle">${escapeHtml(knownTitle || (item.type === "anime" ? `Episode ${n}` : `Chapter ${n}`))}</span>
+        <button class="ertick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+      row.querySelector(".ertick").addEventListener("click", (e) => {
+        e.stopPropagation();
+        setProgressToEpisode(item, n, !watched);
+        render();
+        renderShowDetailEpisodes(item);
+      });
+      row.addEventListener("click", () => {
+        showDetailOverlay.classList.remove("open");
+        openEpisodeDetail(item, n);
+      });
+      el.appendChild(row);
+    }
+  }
+
   const detailOverlay = $("#detailOverlay");
   function openDetail(item){
     $("#detailTitle").textContent = item.english || item.romaji;
@@ -969,26 +1372,26 @@
       <div class="sheet-row">
         <div class="sheet-label">Season</div>
         <div class="stepper">
-          <button data-se="-1">−</button>
+          <button data-se="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="seasonInput" value="${item.season || 1}" min="1" />
-          <button data-se="1">+</button>
+          <button data-se="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>` : ""}
       <div class="sheet-row">
         <div class="sheet-label">${unit}s watched${cap ? " / " + cap : ""}</div>
         <div class="stepper">
-          <button data-s="-1">−</button>
+          <button data-s="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="progInput" value="${item.progress}" min="0" ${cap ? `max="${cap}"` : ""} />
-          <button data-s="1">+</button>
+          <button data-s="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>
       ${item.type === "reading" ? `
       <div class="sheet-row">
         <div class="sheet-label">Volume${item.totalVolumes ? " / " + item.totalVolumes : ""}</div>
         <div class="stepper">
-          <button data-v="-1">−</button>
+          <button data-v="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="volInput" value="${item.volumeProgress||0}" min="0" ${item.totalVolumes ? `max="${item.totalVolumes}"` : ""} />
-          <button data-v="1">+</button>
+          <button data-v="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>` : ""}
       <div class="sheet-row">
@@ -1000,7 +1403,7 @@
         <div class="stars" id="starRow"></div>
       </div>
       <div class="sheet-row">
-        <button class="fav-toggle ${item.favorite ? "on" : ""}" id="favBtn"><span class="star">★</span> ${item.favorite ? "Favorited" : "Add to favorites"}</button>
+        <button class="fav-toggle ${item.favorite ? "on" : ""}" id="favBtn"><span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span> ${item.favorite ? "Favorited" : "Add to favorites"}</button>
       </div>
       <div class="sheet-row">
         <div class="sheet-label">Notes</div>
@@ -1055,7 +1458,7 @@
     const starRow = $("#starRow");
     for(let i=1;i<=10;i++){
       const s = document.createElement("span");
-      s.textContent = "★";
+      s.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>`;
       if(item.rating && i <= item.rating) s.classList.add("on");
       s.addEventListener("click", () => { item.rating = (item.rating === i) ? null : i; saveList(); openDetail(item); });
       starRow.appendChild(s);
@@ -1190,6 +1593,9 @@
     list.push({
       id: media.id, type:"anime",
       romaji: media.title.romaji, english: media.title.english, cover: media.coverImage.medium, customCover:null,
+      bannerImage: media.bannerImage || null, description: cleanDescription(media.description),
+      averageScore: media.averageScore || null, popularity: media.popularity || null,
+      externalLinks: media.externalLinks || [], trailer: media.trailer || null, characters: null,
       format: media.format, countryOfOrigin: media.countryOfOrigin || null,
       genres: media.genres || [], duration: media.duration || null,
       totalEpisodes: media.episodes || null, totalChapters:null, totalVolumes:null,
@@ -1197,6 +1603,7 @@
       progress: cappedProgress, volumeProgress:0,
       nextAiringEpisode: media.nextAiringEpisode || null,
       episodeTitles: (media.streamingEpisodes || []).map(e => e.title),
+      episodeThumbnails: (media.streamingEpisodes || []).map(e => e.thumbnail),
       favorite: !!opts.favorite, rating:null, notes:"",
       history: opts.history, updatedAt: Date.now(), importedFrom:"tvtime"
     });
@@ -1511,7 +1918,7 @@
       const isIn = l.members.some(m => m.id === pickerItemRef.id && m.type === pickerItemRef.type);
       const row = document.createElement("div");
       row.className = "list-row";
-      row.innerHTML = `<span class="lname">${escapeHtml(l.name)}</span><span class="lcount">${isIn ? "✓ Added" : "Add"}</span>`;
+      row.innerHTML = `<span class="lname">${escapeHtml(l.name)}</span><span class="lcount" style="display:inline-flex;align-items:center;gap:4px;">${isIn ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Added' : "Add"}</span>`;
       row.addEventListener("click", () => {
         if(isIn) l.members = l.members.filter(m => !(m.id === pickerItemRef.id && m.type === pickerItemRef.type));
         else l.members.push({ id: pickerItemRef.id, type: pickerItemRef.type });
@@ -1708,7 +2115,7 @@
       <div class="section-title">Badges</div>
       <div class="badge-grid">${BADGES[statsMode].map(b => {
         const earned = b.check({ episodesWatched, completed, streak });
-        return `<div class="badge-cell ${earned?'earned':''}"><div class="bname">${earned?'★ ':''}${b.name}</div><div class="bdesc">${b.desc}</div></div>`;
+        return `<div class="badge-cell ${earned?'earned':''}"><div class="bname">${earned?'<span style="display:inline-flex;width:11px;height:11px;vertical-align:-1px;"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span> ':''}${b.name}</div><div class="bdesc">${b.desc}</div></div>`;
       }).join('')}</div>
     `;
   }
@@ -1780,13 +2187,13 @@
       card.innerHTML = `
         <img src="${m.coverImage.medium}" alt="" loading="lazy" />
         <div class="dc-title">${escapeHtml(title)}</div>
-        <button class="dc-add ${already?'added':''}">${already?'✓':'+'}</button>`;
+        <button class="dc-add ${already?'added':''}">${already?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'}</button>`;
       card.querySelector(".dc-add").addEventListener("click", (e) => {
         e.stopPropagation();
         if(itemById(m.id, mode)){ toast("Already in your list."); return; }
         addToList(m, mode);
         const btn = card.querySelector(".dc-add");
-        btn.textContent = "✓"; btn.classList.add("added");
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`; btn.classList.add("added");
       });
       grid.appendChild(card);
     });
@@ -1832,13 +2239,13 @@
       card.innerHTML = `
         <img src="${m.coverImage.medium}" alt="" loading="lazy" />
         <div class="dc-title">${escapeHtml(title)}</div>
-        <button class="dc-add">+</button>`;
+        <button class="dc-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>`;
       card.querySelector(".dc-add").addEventListener("click", (e) => {
         e.stopPropagation();
         if(itemById(m.id, "anime")){ toast("Already in your list."); return; }
         addToList(m, "anime");
         const btn = card.querySelector(".dc-add");
-        btn.textContent = "✓"; btn.classList.add("added");
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`; btn.classList.add("added");
       });
       grid.appendChild(card);
     });

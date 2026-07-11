@@ -131,6 +131,22 @@ public profiles, friend activity — all of that needs other people,
 accounts, and a server. This app only keeps the first part, on purpose,
 because that's the part that was always really yours.
 
+## Design
+
+AniTrack's visual system, if you're touching styles later:
+
+- **Palette**: background `#0D1117`, cards `#161B22`, borders `#2A313C`,
+  primary text `#F2F5F7`, secondary text `#98A2B3`, accent `#5FA8FF`.
+  The five tracking statuses (Watching, Plan to Watch, Completed, On
+  Hold, Dropped) each get their own muted hue so they stay scannable at
+  a glance, defined in the `STATUS_COLOR` map in the script.
+- **Type**: Space Grotesk for headings/numbers, Inter for body text —
+  loaded from Google Fonts, with a system-font fallback chain if offline
+  on first load.
+- **Icons**: inline Lucide-style SVGs throughout (no external icon
+  library dependency, so they still work offline once the page itself is
+  cached).
+
 ## Notes / limitations
 - Single-user by design — no login, no account, and your data lives only
   on this device. Uninstalling or clearing site data wipes your list, so
@@ -228,6 +244,51 @@ Navigation is a bottom tab bar, like TV Time and Logbook both use:
 The header itself is just the app name and a small dot for online/offline
 status now — the page counter and clock were cut since they weren't
 adding anything.
+
+## Tapping a card: Episode Detail and Show Detail
+
+Cards now split into three distinct tap targets, matching how the actual
+TV Time app behaves:
+
+- **Tapping the title pill** opens a full **Show Detail** page: banner
+  image, an About tab (cast with voice actors, genres/format/status, the
+  AniList community score, the synopsis, a "Watch trailer" link when
+  AniList has one, and a few metadata icons), and an Episodes tab listing
+  every episode/chapter individually — tap any row's checkmark to jump
+  your progress straight to that point, or tap the row itself to open
+  that specific episode's detail view. A **⋯** button in the top-right
+  opens the original edit sheet (status, rating, notes, season number,
+  custom poster, remove) — that sheet didn't go away, it just moved here.
+- **Tapping anywhere else on the card** opens **Episode Detail** for the
+  next unwatched episode/chapter (or the one you last watched, from the
+  dimmed Watched History row): episode number and title, watched status
+  (or the air date if it hasn't aired yet), a tick to mark it, streaming
+  links where AniList has them, and the series synopsis.
+- **Tapping the tick itself** still does the quick one-step mark, exactly
+  as before.
+- The **tick's look changed** to a softer muted gray-on-light-gray
+  circle, closer to your reference screenshots, instead of the previous
+  stark white-on-navy.
+
+**Honest data-availability notes**, since AniList's public API doesn't
+carry everything TV Time's own screens show:
+- There's no per-episode synopsis or per-episode air date in AniList's
+  schema for past episodes — Episode Detail shows the **series-level**
+  synopsis and score, not an episode-specific one, and only shows an air
+  date for the *next* episode (the one date AniList actually tracks).
+  It's labeled honestly rather than faked.
+- "Where to watch" links only appear when AniList has official streaming
+  links on file for that title — many titles, especially older or niche
+  ones, won't have any, and the section just won't show.
+- Cast/trailer are fetched only when you open a Show Detail page for the
+  first time (kept out of the main list-loading queries so those stay
+  fast), and cached afterward.
+- Since progress is tracked as a single running count rather than a list
+  of individually-watched episodes, marking one episode watched from the
+  Episodes tab marks everything up to it too, and unmarking one unmarks
+  everything after it — there's no way to have, say, episode 5 watched
+  while episode 3 isn't. This keeps the whole app's counting consistent,
+  but it's a real simplification worth knowing about.
 
 
 ---
