@@ -114,10 +114,14 @@ The header toolbar:
   you like. Add a title from its detail view.
 - **Upcoming** — everything with a real next-airing date that hasn't
   happened yet, soonest first.
-- **Alerts** — "Alerts: Off" toggles local notifications for newly
-  available episodes/chapters. Honest limitation: there's no push
-  server behind this, so it only fires while AniTrack is actually open —
-  a nice-to-have, not a guarantee.
+- **Notifications** (More tab) opens Notification Settings — ten
+  independently-toggleable categories (new episode/chapter, airing
+  reminders, release countdown, continue watching/reading, watch later,
+  daily wisdom, journal anniversaries, statistics milestones) plus a
+  master switch. Same honest limitation as before: no push server behind
+  this app, so anything here only fires while AniTrack is actually open.
+  See **Timeline** (More tab) for the full history — see
+  `PROJECT_STATUS.md` for the complete architecture.
 
 Also in the detail view: an editable **season number**, and a **custom
 poster** override if you'd rather see a different cover than AniList's

@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#0D1117;
@@ -18,9 +18,10 @@
     --bg-card:#161B22;
     --bg-card-hi:#1C232C;
     --border:#2A313C;
+    --border-hover:#3A4353;
     --fg:#F2F5F7;
     --fg-dim:#98A2B3;
-    --fg-faint:#6B7280;
+    --fg-faint:#8A91A0; /* lightened from #6B7280 — the old value failed WCAG AA (3.3–3.9:1) at the small sizes it's actually used at (hints, timestamps); this clears 4.5:1 against every card background while staying the same muted hue */
     --accent:#5FA8FF;
     --amber:#D4A72C;
     --status-green:#57AB5A;
@@ -28,12 +29,16 @@
     --status-red:#E5534B;
     --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    /* Scoped to the Daily Wisdom widget only — a deliberate retro-gadget
+       exception to the app's normal Space Grotesk/Inter system, matching
+       the widget's own reference design rather than the rest of the UI. */
+    --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", monospace;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg);
     font-family:var(--font-body); -webkit-tap-highlight-color:transparent; overscroll-behavior-y: contain; }
   body{ display:flex; flex-direction:column; min-height:100vh; }
-  ::selection{ background:var(--accent); color:#0D1117; }
+  ::selection{ background:var(--accent); color:var(--bg); }
   button, select, textarea, input{ font-family:var(--font-body); }
   h1,h2,h3,.page-title,.brand,.ep-big,.ep-big-detail,.hero-title,.hero-numbers b,.stat-card .num,
   .list-row .lname, .cast-item .cname{ font-family:var(--font-heading); }
@@ -52,12 +57,14 @@
   .statmode{ flex:1; text-align:center; padding:9px 0; font-size:12px; letter-spacing:.3px; font-weight:600;
     color:var(--fg-dim); background:transparent; border:none; cursor:pointer; transition:background .15s, color .15s; }
   .statmode.active{ background:rgba(95,168,255,.12); color:var(--accent); }
+  .statmode:not(.active):hover{ background:var(--bg-card-hi); color:var(--fg); }
 
   .tabs{ display:flex; gap:6px; overflow-x:auto; padding:12px 16px 4px; scrollbar-width:none; }
   .tabs::-webkit-scrollbar{ display:none; }
   .tab{ flex:0 0 auto; padding:6px 12px; border-radius:6px; font-size:12px; letter-spacing:.2px;
-    color:var(--fg-dim); background:var(--bg-alt); border:1px solid var(--border); cursor:pointer; transition:background .15s, color .15s; }
+    color:var(--fg-dim); background:var(--bg-alt); border:1px solid var(--border); cursor:pointer; transition:background .15s, color .15s, border-color .15s; }
   .tab.active{ color:var(--accent); font-weight:600; background:rgba(95,168,255,.12); border-color:rgba(95,168,255,.35); }
+  .tab:not(.active):hover{ border-color:var(--border-hover); color:var(--fg); }
 
   main{ flex:1; padding:8px 16px 84px; }
 
@@ -78,7 +85,7 @@
   .more-row{ display:flex; align-items:center; justify-content:space-between; background:var(--bg-card);
     border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:10px; cursor:pointer;
     font-size:13px; font-weight:600; transition:background .15s, border-color .15s, transform .15s; }
-  .more-row:hover{ background:var(--bg-card-hi); border-color:#3A4353; }
+  .more-row:hover{ background:var(--bg-card-hi); border-color:var(--border-hover); }
   .more-row:active{ transform:scale(0.99); }
   .more-row .chev{ color:var(--fg-dim); font-weight:400; font-size:12px; }
 
@@ -90,7 +97,116 @@
   .feed-history{ opacity:.5; }
   .feed-history .tick{ opacity:.7; }
   .card-fresh{ box-shadow:0 0 0 2px var(--accent) inset; }
+
+  /* Calendar widgets */
+  .cal-widget{ background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .cal-widget .cw-title{ font-family:var(--font-heading); font-size:14px; font-weight:600; margin-bottom:2px; }
+  .cal-sub{ font-size:10.5px; color:var(--fg-dim); font-weight:600; letter-spacing:.3px; text-transform:uppercase; margin:14px 0 8px; }
+  .cal-sub:first-of-type{ margin-top:12px; }
+  .cal-row{ display:flex; gap:10px; align-items:center; padding:7px 0; cursor:pointer; }
+  .cal-row .cr-title{ transition:color .15s; }
+  .cal-row:hover .cr-title{ color:var(--accent); }
+  .cal-row img{ width:32px; height:45px; object-fit:cover; border-radius:4px; flex:0 0 auto; background:var(--bg-alt); }
+  .cal-row .cr-title{ font-size:12.5px; font-weight:600; line-height:1.3; }
+  .cal-row .cr-meta{ font-size:10.5px; color:var(--fg-dim); margin-top:1px; }
+  .cal-row .cr-time{ margin-left:auto; font-size:10.5px; color:var(--fg-dim); flex:0 0 auto; text-align:right; }
+  .cal-day-label{ font-size:10px; color:var(--fg-faint); font-weight:600; text-transform:uppercase; letter-spacing:.4px; margin:12px 0 4px; }
+  .cal-day-label:first-child{ margin-top:0; }
+
+  /* Release timeline (Show Detail) */
+  .release-timeline{ background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:16px; margin:14px 0; }
+  .rt-episode{ font-family:var(--font-heading); font-size:13px; font-weight:600; margin-bottom:16px; }
+  .rt-episode .rt-sched{ font-family:var(--font-body); font-weight:500; font-size:11px; color:var(--fg-dim); margin-left:6px; }
+  .rt-track{ position:relative; height:3px; background:var(--border); border-radius:2px; margin-bottom:18px; }
+  .rt-fill{ position:absolute; left:0; top:0; height:100%; background:var(--accent); border-radius:2px; opacity:.5; }
+  .rt-marker{ position:absolute; top:50%; width:10px; height:10px; border-radius:50%; background:var(--accent);
+    transform:translate(-50%,-50%); box-shadow:0 0 0 3px rgba(95,168,255,.2); }
+  .rt-countdown-label{ font-size:10px; color:var(--fg-faint); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+  .rt-countdown-numbers{ display:flex; gap:22px; }
   .tick-done{ background:var(--status-green) !important; color:var(--bg) !important; cursor:default; }
+
+  /* Daily Wisdom overlay (full detail modal, opened from the widget or a notification tap) */
+  .wisdom-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:28px 22px; margin-top:10px; text-align:center; }
+  .wisdom-quote{ font-family:var(--font-heading); font-size:17px; line-height:1.5; font-style:italic; margin-bottom:14px; }
+  .wisdom-attribution{ font-size:11.5px; color:var(--fg-dim); }
+
+  /* Daily Wisdom dashboard widget — retro desktop-gadget treatment */
+  .wisdom-widget-wrap{ margin-bottom:16px; }
+  .wisdom-widget{ border-radius:12px; border:1px solid var(--border); overflow:hidden; background:var(--bg-card); font-family:var(--font-mono); }
+  .ww-chrome{ display:flex; align-items:center; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--border); }
+  .ww-chrome-label{ display:flex; align-items:baseline; gap:7px; font-size:9.5px; font-weight:700; letter-spacing:1.2px; color:var(--fg-dim); }
+  .ww-chrome-label .ww-jp{ font-weight:400; letter-spacing:0; color:var(--fg-faint); font-size:10px; }
+  .ww-chrome-controls{ display:flex; gap:6px; }
+  .ww-btn{ width:22px; height:22px; border-radius:6px; background:var(--bg-alt); border:1px solid var(--border);
+    color:var(--fg-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .15s, color .15s; }
+  .ww-btn:hover{ color:var(--fg); border-color:var(--border-hover); }
+  .ww-btn svg{ width:11px; height:11px; }
+
+  .ww-scene{ position:relative; padding:16px 30px 14px 18px; min-height:192px; display:flex; flex-direction:column;
+    background-size:cover; background-position:center; cursor:pointer; }
+  .ww-scene::before{ content:""; position:absolute; inset:0; background:linear-gradient(175deg, rgba(8,10,16,.25), rgba(8,10,16,.7)); pointer-events:none; transition:background .2s; }
+  .ww-scene:hover::before{ background:linear-gradient(175deg, rgba(8,10,16,.15), rgba(8,10,16,.6)); }
+  .ww-scene > *{ position:relative; z-index:1; }
+  .ww-scene:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
+
+  .ww-scene-top{ display:flex; align-items:flex-start; justify-content:flex-end; gap:9px; margin-bottom:8px; }
+  .ww-date{ font-size:9.5px; letter-spacing:1.2px; color:rgba(242,245,247,.68); padding-top:5px; }
+  .ww-avatar{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--fg); flex:0 0 auto;
+    clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%); }
+
+  .ww-dots{ position:absolute; left:18px; top:52px; display:flex; flex-direction:column; gap:5px; }
+  .ww-dots span{ width:3px; height:3px; background:rgba(242,245,247,.4); }
+
+  .ww-quote-block{ flex:1; padding-left:16px; display:flex; flex-direction:column; justify-content:center; min-height:64px; }
+  .ww-quote-mark{ font-size:24px; line-height:1; color:var(--accent); opacity:.75; font-family:Georgia,serif; margin-bottom:2px; }
+  .ww-quote-text{ font-size:13px; line-height:1.55; color:var(--fg); margin:0; }
+
+  .ww-vertical{ position:absolute; right:9px; top:42px; bottom:26px; display:flex; flex-direction:row-reverse; align-items:center; gap:5px; }
+  .ww-vertical span{ writing-mode:vertical-rl; text-orientation:mixed; white-space:nowrap; }
+  .ww-vc{ font-size:8px; font-weight:700; letter-spacing:1px; color:rgba(242,245,247,.75); }
+  .ww-vs{ font-size:7.5px; letter-spacing:1px; color:rgba(242,245,247,.45); }
+
+  .ww-bottom-row{ display:flex; align-items:center; gap:8px; margin-top:10px; padding-left:16px; }
+  .ww-qid{ font-size:9px; color:rgba(242,245,247,.4); flex:0 0 auto; }
+  .ww-series-line{ flex:1; text-align:center; padding-right:16px; font-size:8.5px; letter-spacing:1px;
+    color:rgba(242,245,247,.6); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ww-pixel-accent{ display:grid; grid-template-columns:repeat(2,4px); gap:2px; flex:0 0 auto; align-self:center; }
+  .ww-pixel-accent i{ width:4px; height:4px; background:var(--accent); opacity:.6; display:block; }
+
+  .wisdom-hidden-hint{ display:flex; align-items:center; justify-content:space-between; padding:10px 2px; margin-bottom:16px; font-size:11px; color:var(--fg-faint); }
+  .wisdom-hidden-hint button{ background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; font-family:var(--font-body); font-weight:600; padding:4px; }
+
+  /* Timeline */
+  .tl-row{ display:flex; gap:10px; align-items:flex-start; padding:11px 0; cursor:pointer; position:relative; }
+  .tl-row .tl-title{ transition:color .15s; }
+  .tl-row:hover .tl-title{ color:var(--accent); }
+  .tl-row.unread::before{ content:""; position:absolute; left:-11px; top:16px; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .tl-icon{ width:32px; height:45px; border-radius:6px; background:var(--bg-card); border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--accent); }
+  .tl-icon svg{ width:15px; height:15px; }
+  .tl-poster{ width:32px; height:45px; border-radius:6px; object-fit:cover; flex:0 0 auto; background:var(--bg-card); border:1px solid var(--border); }
+  .tl-body{ flex:1; min-width:0; }
+  .tl-title{ font-size:12.5px; font-weight:600; line-height:1.35; }
+  .tl-desc{ font-size:11px; color:var(--fg-dim); margin-top:2px; line-height:1.4; }
+  .tl-time{ font-size:9.5px; color:var(--fg-faint); margin-top:4px; }
+
+  /* Dashboard notification widget */
+  .notif-widget-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+  .notif-widget-item{ font-size:11.5px; color:var(--fg-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* Notification settings */
+  .notif-setting-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--border); }
+  .notif-setting-row:last-child{ border-bottom:none; }
+  .notif-setting-row .nsr-label{ font-size:12.5px; font-weight:600; }
+  .notif-setting-row .nsr-desc{ font-size:10.5px; color:var(--fg-dim); margin-top:2px; line-height:1.4; }
+  .settings-toggle{ flex:0 0 auto; padding:6px 14px; border-radius:999px; font-size:11px; font-weight:600;
+    border:1px solid var(--border); background:var(--bg-card); color:var(--fg-dim); cursor:pointer; transition:background .15s, border-color .15s, color .15s; }
+  .settings-toggle.on{ background:rgba(95,168,255,.15); border-color:var(--accent); color:var(--accent); }
+  .settings-toggle:not(.on):hover{ border-color:var(--border-hover); color:var(--fg); }
+  .settings-toggle:disabled{ opacity:.4; cursor:not-allowed; }
+  .notif-freq-select{ background:var(--bg-card); border:1px solid var(--border); color:var(--fg); font-size:11.5px;
+    padding:6px 10px; border-radius:8px; font-family:var(--font-body); }
 
   .empty{ margin-top:60px; text-align:center; color:var(--fg-dim); font-size:13px; line-height:1.7; }
   .empty b{ color:var(--fg); }
@@ -98,7 +214,7 @@
   .card{ display:flex; position:relative; background:var(--bg-card); border:1px solid var(--border);
     border-radius:12px; margin-bottom:12px; overflow:hidden; cursor:pointer; min-height:118px;
     box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-  .card:hover{ transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.35); border-color:#3A4353; }
+  .card:hover{ transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.35); border-color:var(--border-hover); }
   .card:active{ transform:translateY(0); }
   .poster-wrap{ position:relative; width:92px; flex:0 0 92px; background:var(--bg-alt); }
   .card .poster{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
@@ -119,33 +235,59 @@
   .badge.new{ background:rgba(95,168,255,.15); color:var(--accent); }
   .badge.premiere{ background:transparent; border:1px solid var(--fg-dim); color:var(--fg-dim); }
   .badge.latest{ background:transparent; border:1px solid var(--border); color:var(--fg-faint); }
+  .badge.tag{ background:transparent; border:1px solid var(--border); color:var(--fg-dim); font-weight:500; letter-spacing:0; text-transform:none; font-size:10.5px; }
   .star{ color:var(--amber); font-size:13px; flex:0 0 auto; display:flex; }
   .star svg{ width:13px; height:13px; }
-  .watchnext{ background:var(--bg-card-hi); color:var(--fg); font-size:9px; font-weight:600; letter-spacing:.3px;
-    padding:4px 10px; border-radius:999px; flex:0 0 auto; }
   .tick{ position:absolute; right:12px; top:50%; transform:translateY(-50%); width:44px; height:44px;
-    border-radius:50%; background:#E9E9EC; border:none; display:flex;
+    border-radius:50%; background:#E9E9EC; border:none; display:flex; z-index:2;
     align-items:center; justify-content:center; cursor:pointer; color:#7A7F8C; flex:0 0 auto; transition:transform .15s; }
   .tick svg{ width:18px; height:18px; }
   .tick:active{ transform:translateY(-50%) scale(0.93); }
 
+  .swipe-action{ position:absolute; inset:0; z-index:0; background:var(--status-green); color:var(--bg);
+    display:flex; align-items:center; gap:8px; padding-left:22px; font-size:12px; font-weight:600; }
+  .swipe-icon{ display:flex; flex:0 0 auto; opacity:.45; transform:scale(.75);
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1), opacity .2s ease; }
+  .swipe-icon svg{ width:18px; height:18px; }
+  .swipe-icon .draw{ stroke-dasharray:1; stroke-dashoffset:1; transition:stroke-dashoffset .3s ease; }
+  .swipe-icon .draw-1{ transition-delay:0s; }
+  .swipe-icon .draw-2{ transition-delay:.12s; }
+  .swipe-icon .draw-3{ transition-delay:.24s; }
+  .swipe-action span{ opacity:0; transform:translateX(-4px); transition:opacity .2s ease, transform .2s ease; }
+  .swipe-action.armed .swipe-icon{ opacity:1; transform:scale(1); }
+  .swipe-action.armed .swipe-icon .draw{ stroke-dashoffset:0; }
+  .swipe-action.armed .swipe-icon .page-flip{ transform-box:fill-box; transform-origin:0% 50%;
+    animation:pageTurn .5s ease-in-out .4s 1 both; }
+  .swipe-action.armed span{ opacity:1; transform:translateX(0); }
+  @keyframes pageTurn{ 0%{ transform:scaleX(1); } 50%{ transform:scaleX(.08); } 100%{ transform:scaleX(1); } }
+  .swipe-track{ display:flex; width:100%; position:relative; z-index:1; background:var(--bg-card);
+    touch-action:pan-y; will-change:transform; }
+
+  .card-progress{ height:3px; border-radius:2px; overflow:hidden; margin-top:1px; background:var(--border); }
+  .card-progress > div{ height:100%; background:var(--accent); transition:width .2s; }
+  .card-progress.complete > div{ background:var(--status-green); }
+
   .btn{ font-family:var(--font-body); font-size:11.5px; letter-spacing:.2px; background:var(--bg-card-hi); color:var(--fg);
     border:1px solid var(--border); border-radius:6px; padding:7px 11px; cursor:pointer; transition:background .15s, border-color .15s, transform .1s; }
-  .btn:hover{ border-color:#3A4353; }
+  .btn:hover{ border-color:var(--border-hover); }
   .btn:active{ transform:scale(0.97); }
   .btn.primary{ background:rgba(95,168,255,.12); color:var(--accent); font-weight:600; border-color:rgba(95,168,255,.35); }
   .btn.primary:hover{ background:rgba(95,168,255,.18); }
   .btn.ghost{ background:transparent; color:var(--fg-faint); border-color:transparent; }
   .btn.ghost:hover{ background:var(--bg-card-hi); }
 
-  .fab{ position:fixed; right:18px; bottom:80px; width:54px; height:54px; border-radius:50%; background:var(--accent);
+  .fab{ position:fixed; right:18px; bottom:80px; width:44px; height:44px; border-radius:50%; background:var(--accent);
     color:var(--bg); border:none; box-shadow:0 4px 14px rgba(95,168,255,.35); z-index:30; cursor:pointer;
     display:flex; align-items:center; justify-content:center; transition:transform .15s, box-shadow .15s; }
   .fab:hover{ transform:translateY(-1px); box-shadow:0 6px 18px rgba(95,168,255,.45); }
   .fab:active{ transform:translateY(0) scale(0.96); }
-  .fab svg{ width:24px; height:24px; }
+  .fab svg{ width:18px; height:18px; }
 
   .overlay{ position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; }
+  /* The edit sheet can be opened from on top of Show Detail (stacked sheet:
+     closing it reveals Show Detail again) — needs to paint above it rather
+     than tie on the shared z-index, or it renders open-but-invisible. */
+  #detailOverlay{ z-index:55; }
   .overlay.open{ display:flex; }
   .ov-head{ padding:14px 16px 8px; display:flex; gap:8px; align-items:center; }
   .ov-head h2{ font-size:15px; letter-spacing:0; margin:0; flex:1; font-weight:600; font-family:var(--font-heading); }
@@ -156,10 +298,18 @@
   .ov-close svg{ width:20px; height:20px; }
   .ov-body{ flex:1; overflow-y:auto; padding:8px 16px 24px; }
   .hint{ color:var(--fg-faint); font-size:11px; padding:6px 2px 14px; line-height:1.6; }
+  .loading-row{ display:flex; align-items:center; gap:8px; }
+  .loading-dots{ display:inline-flex; gap:4px; align-items:center; flex:0 0 auto; }
+  .loading-dots span{ width:5px; height:5px; border-radius:50%; background:var(--fg-faint); animation:loadingPulse 1.1s ease-in-out infinite; }
+  .loading-dots span:nth-child(2){ animation-delay:.15s; }
+  .loading-dots span:nth-child(3){ animation-delay:.3s; }
+  @keyframes loadingPulse{ 0%,80%,100%{ opacity:.3; transform:scale(.8); } 40%{ opacity:1; transform:scale(1); } }
+  @media (prefers-reduced-motion: reduce){ .loading-dots span{ animation:none; opacity:.6; } }
 
   .result{ display:flex; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
     padding:8px; margin-bottom:8px; align-items:center; transition:border-color .15s; }
-  .result:hover{ border-color:#3A4353; }
+  .result:hover{ border-color:var(--border-hover); }
+  .result.clickable{ cursor:pointer; }
   .result img{ width:42px; height:60px; object-fit:cover; border-radius:5px; flex:0 0 auto; background:var(--bg-alt); }
   .result .rtitle{ font-size:13px; font-weight:600; line-height:1.25; }
   .result .rmeta{ font-size:10px; color:var(--fg-dim); margin-top:2px; }
@@ -179,13 +329,14 @@
     display:flex; align-items:center; justify-content:center; }
   .stepper button svg{ width:16px; height:16px; }
   .btn svg{ width:13px; height:13px; vertical-align:-2px; }
-  .stepper button:hover{ border-color:#3A4353; }
+  .stepper button:hover{ border-color:var(--border-hover); }
   .stepper input{ width:70px; text-align:center; background:var(--bg-card); border:1px solid var(--border); color:var(--fg);
     font-size:16px; border-radius:8px; padding:8px 0; }
   .status-grid{ display:flex; flex-wrap:wrap; gap:6px; }
   .status-pill{ padding:8px 12px; border-radius:8px; font-size:11px; letter-spacing:.2px;
     background:var(--bg-card); color:var(--fg-dim); border:1px solid var(--border); cursor:pointer; transition:border-color .15s; }
   .status-pill.sel{ color:var(--bg); font-weight:600; border-color:transparent; }
+  .status-pill:not(.sel):hover{ border-color:var(--border-hover); color:var(--fg); }
   .stars{ display:flex; gap:4px; }
   .stars span{ cursor:pointer; color:var(--fg-faint); display:flex; }
   .stars span svg{ width:20px; height:20px; }
@@ -193,6 +344,18 @@
   textarea.notes{ width:100%; min-height:80px; background:var(--bg-card); border:1px solid var(--border);
     color:var(--fg); border-radius:8px; padding:10px; font-size:13px; resize:vertical; outline:none; transition:border-color .15s; }
   textarea.notes:focus{ border-color:var(--accent); }
+  textarea.notes.diary{ min-height:140px; line-height:1.6; }
+
+  /* Journal tab */
+  .journal-dates{ display:flex; gap:12px; flex-wrap:wrap; }
+  .journal-dates .jd-item{ flex:1; min-width:130px; }
+  .journal-dates .jf-sub{ display:block; font-size:10px; color:var(--fg-faint); margin-bottom:5px; }
+  .journal-input{ width:100%; background:var(--bg-card); border:1px solid var(--border); color:var(--fg);
+    border-radius:8px; padding:9px 10px; font-family:var(--font-body); font-size:12.5px; outline:none; transition:border-color .15s; }
+  .journal-input:focus{ border-color:var(--accent); }
+  .journal-input::-webkit-calendar-picker-indicator{ filter:invert(.7); cursor:pointer; }
+  .mood-pick{ font-size:12px; padding:7px 12px; display:inline-flex; align-items:center; gap:6px; }
+  .journal-intro{ font-size:11px; color:var(--fg-faint); line-height:1.6; margin:0 0 18px; }
   .fav-toggle{ display:flex; align-items:center; gap:8px; background:var(--bg-card); border:1px solid var(--border); color:var(--fg);
     padding:10px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:border-color .15s; }
   .fav-toggle .star{ font-size:16px; color:var(--fg-faint); }
@@ -223,9 +386,10 @@
   .hero-numbers .hn b{ display:block; font-size:26px; color:var(--fg); font-weight:600; letter-spacing:0; }
   .hero-sub{ font-size:11px; color:var(--fg-dim); border-top:1px solid var(--border); padding-top:10px; }
   .stat-cards{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
+  .stat-cards.two-col{ grid-template-columns:1fr 1fr; }
   .stat-cards .stat-card .num{ font-size:18px; }
   .stat-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:14px; transition:border-color .15s; }
-  .stat-card:hover{ border-color:#3A4353; }
+  .stat-card:hover{ border-color:var(--border-hover); }
   .stat-card .num{ font-size:22px; font-weight:600; }
   .stat-card .lbl{ font-size:10px; color:var(--fg-dim); letter-spacing:.3px; margin-top:4px; }
   .section-title{ font-size:11px; letter-spacing:.5px; text-transform:uppercase; color:var(--fg-dim); margin:18px 0 10px; font-weight:600; }
@@ -240,23 +404,29 @@
   .badge-cell .bname{ font-weight:600; }
   .badge-cell .bdesc{ color:var(--fg-dim); font-size:10px; }
 
+  .discover-search{ margin:0 0 12px; }
+  .discover-search input{ width:100%; background:var(--bg-alt); border:1px solid var(--border); color:var(--fg);
+    border-radius:8px; padding:10px 12px; font-family:var(--font-body); font-size:13px; outline:none; transition:border-color .15s; }
+  .discover-search input:focus{ border-color:var(--accent); }
+
   /* Discover results grid */
   .disc-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
   .disc-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; overflow:hidden; position:relative; transition:border-color .15s; }
-  .disc-card:hover{ border-color:#3A4353; }
+  .disc-card:hover{ border-color:var(--border-hover); }
   .disc-card img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
   .disc-card .dc-title{ font-size:10px; padding:6px; line-height:1.3; }
   .disc-card .dc-add{ position:absolute; top:5px; right:5px; width:26px; height:26px; border-radius:50%;
     background:var(--accent); color:var(--bg); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; }
   .disc-card .dc-add svg{ width:14px; height:14px; }
   .disc-card .dc-add.added{ background:var(--bg-card-hi); color:var(--fg-faint); }
-  .genre-pick{ padding:5px 10px; font-size:10px; border-radius:999px; background:var(--bg-alt); color:var(--fg-dim); border:1px solid var(--border); cursor:pointer; flex:0 0 auto; }
+  .genre-pick{ padding:5px 10px; font-size:10px; border-radius:999px; background:var(--bg-alt); color:var(--fg-dim); border:1px solid var(--border); cursor:pointer; flex:0 0 auto; transition:border-color .15s, color .15s; }
   .genre-pick.active{ background:rgba(212,167,44,.15); color:var(--amber); border-color:rgba(212,167,44,.4); }
+  .genre-pick:not(.active):hover{ border-color:var(--border-hover); color:var(--fg); }
 
   /* Lists */
   .list-row{ display:flex; align-items:center; justify-content:space-between; background:var(--bg-card);
     border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
-  .list-row:hover{ border-color:#3A4353; }
+  .list-row:hover{ border-color:var(--border-hover); }
   .list-row .lname{ font-weight:600; font-size:13px; }
   .list-row .lcount{ font-size:11px; color:var(--fg-dim); }
   .member-row{ display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:8px; margin-bottom:8px; }
@@ -272,6 +442,15 @@
   .ep-hero-close svg, .ep-hero-menu svg{ width:17px; height:17px; }
   .ep-hero-close{ left:14px; }
   .ep-hero-menu{ right:14px; }
+
+  .action-menu{ position:absolute; top:54px; right:14px; background:var(--bg-card); border:1px solid var(--border);
+    border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.4); min-width:172px; overflow:hidden; z-index:5; display:none; }
+  .action-menu.open{ display:block; }
+  .action-menu-item{ display:block; width:100%; text-align:left; background:none; border:none; color:var(--fg);
+    font-family:var(--font-body); font-size:13px; padding:12px 14px; cursor:pointer; transition:background .15s; }
+  .action-menu-item:hover{ background:var(--bg-card-hi); }
+  .action-menu-item + .action-menu-item{ border-top:1px solid var(--border); }
+  .action-menu-item.danger-text{ color:var(--status-red); }
 
   /* Episode Detail body */
   .ep-big-detail{ font-size:19px; font-weight:600; margin-top:6px; }
@@ -293,7 +472,6 @@
   .cast-item img{ width:56px; height:56px; border-radius:50%; object-fit:cover; background:var(--bg-card); border:1px solid var(--border); }
   .cast-item .cname{ font-size:10px; font-weight:600; margin-top:5px; line-height:1.25; }
   .cast-item .cva{ font-size:9px; color:var(--fg-dim); margin-top:1px; line-height:1.2; }
-  .show-info-line{ font-size:12px; color:var(--fg-dim); margin-bottom:6px; }
   .show-score{ display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--amber); font-weight:600; margin-bottom:14px; }
   .show-score svg{ width:13px; height:13px; }
   .trailer-btn{ display:flex; align-items:center; gap:12px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
@@ -303,12 +481,9 @@
     display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
   .trailer-btn .tplay svg{ width:14px; height:14px; }
   .trailer-btn .ttext{ font-size:12px; font-weight:600; }
-  .meta-icons-row{ display:flex; gap:18px; flex-wrap:wrap; font-size:11px; color:var(--fg-dim); margin:14px 0; }
-  .meta-icons-row span{ display:flex; align-items:center; gap:5px; }
-  .meta-icons-row svg{ width:14px; height:14px; flex:0 0 auto; }
   .ep-row{ display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px;
     padding:10px 12px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
-  .ep-row:hover{ border-color:#3A4353; }
+  .ep-row:hover{ border-color:var(--border-hover); }
   .ep-row .ernum{ font-size:12px; font-weight:600; width:34px; flex:0 0 auto; font-family:var(--font-heading); }
   .ep-row .ertitle{ flex:1; font-size:12px; color:var(--fg-dim); }
   .ep-row.watched .ertitle{ color:var(--fg); }
@@ -317,7 +492,47 @@
   .ep-row .ertick svg{ width:13px; height:13px; }
   .ep-row.watched .ertick{ background:var(--status-green); color:var(--bg); }
 
-  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } .card, .more-row, .fab{ transition:none; } }
+  /* Show Detail: poster over hero */
+  .ep-hero{ overflow:visible; }
+  .show-hero-poster{ position:absolute; left:14px; bottom:-34px; width:74px; height:104px; border-radius:8px;
+    object-fit:cover; background:var(--bg-card); border:2px solid var(--bg); box-shadow:0 4px 10px rgba(0,0,0,.35); }
+  #showDetailTitle{ font-size:19px; margin:0 0 4px 88px; min-height:20px; }
+  .detail-native{ margin:0 0 14px 88px; font-size:12px; color:var(--fg-dim); font-style:italic; }
+
+  /* Show Detail: key/value meta grid (studio, language, status, years, etc.) */
+  .detail-meta-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-bottom:16px; }
+  .detail-meta-item .dmi-label{ font-size:9.5px; font-weight:600; letter-spacing:.4px; text-transform:uppercase; color:var(--fg-faint); margin-bottom:2px; }
+  .detail-meta-item .dmi-value{ font-size:12.5px; color:var(--fg); line-height:1.35; }
+
+  .genre-chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+  .rating-note{ margin:-8px 0 14px; }
+
+  /* Collapsible sections */
+  .detail-section{ border-top:1px solid var(--border); padding:14px 0; }
+  .detail-section summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between;
+    font-family:var(--font-heading); font-size:13.5px; font-weight:600; }
+  .detail-section summary::-webkit-details-marker{ display:none; }
+  .detail-section summary .chev-icon{ width:16px; height:16px; color:var(--fg-dim); transition:transform .15s ease; flex:0 0 auto; }
+  .detail-section[open] summary .chev-icon{ transform:rotate(180deg); }
+  .detail-section .sec-body{ margin-top:12px; }
+
+  /* Recommendation cards (Similar Anime / Similar Manga) */
+  .rec-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+  .rec-row::-webkit-scrollbar{ display:none; }
+  .rec-row + .rec-row{ margin-top:14px; }
+  .rec-group-label{ font-size:11px; font-weight:600; color:var(--fg-dim); margin-bottom:8px; }
+  .rec-card{ flex:0 0 auto; width:92px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+    overflow:hidden; cursor:pointer; transition:border-color .15s; }
+  .rec-card:hover{ border-color:var(--border-hover); }
+  .rec-card img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--bg-card-hi); }
+  .rec-card .rc-title{ font-size:10px; padding:6px; line-height:1.3; }
+  .genre-jump-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
+
+  /* Character cards */
+  .cast-item{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:10px 6px 8px; transition:border-color .15s; }
+  .cast-item:hover{ border-color:var(--border-hover); }
+
+  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } .card, .more-row, .fab{ transition:none; } .detail-section summary .chev-icon{ transition:none; } }
 </style>
 </head>
 <body>
@@ -336,6 +551,7 @@
 
   <div class="tabpage" id="page-discover">
     <div class="page-title">Discover</div>
+    <div class="discover-search"><input id="discoverSearchInput" type="text" placeholder="Search titles…" autocomplete="off" /></div>
     <div class="tabs" id="discoverTabs" style="padding:0 0 10px;">
       <button class="tab active" data-d="trending">Trending</button>
       <button class="tab" data-d="popular">Popular</button>
@@ -353,6 +569,10 @@
       <button class="statmode" data-sm="reading">Reading</button>
     </div>
     <div id="statsBody"></div>
+    <div id="statsCrossBody"></div>
+
+    <div class="section-title">Journal</div>
+    <div class="more-row" id="moreTimelineBtn"><span>Timeline</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
 
     <div class="section-title">Lists</div>
     <div class="more-row" id="moreListsBtn"><span id="listsPreviewLabel">Custom Lists</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
@@ -360,7 +580,7 @@
     <div class="section-title">Manage</div>
     <div class="more-row" id="moreImportBtn"><span>Import from TV Time</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
     <div class="more-row" id="moreSequelsBtn"><span>Find Missing Sequels</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
-    <div class="more-row" id="moreNotifyBtn"><span>Episode Alerts</span><span class="chev" id="moreNotifyStatus">Off</span></div>
+    <div class="more-row" id="moreNotifyBtn"><span>Notifications</span><span class="chev" id="moreNotifyStatus">Off</span></div>
   </div>
 </main>
 
@@ -376,7 +596,7 @@
 <div class="overlay" id="searchOverlay">
   <div class="ov-head">
     <input id="searchInput" type="text" placeholder="Search…" autocomplete="off" />
-    <button class="ov-close" id="closeSearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="ov-close" id="closeSearch" aria-label="Close search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="hint" id="searchHint">Type at least 2 characters. Needs internet the first time you add a title.</div>
   <div class="ov-body" id="results"></div>
@@ -386,7 +606,7 @@
 <div class="overlay" id="detailOverlay">
   <div class="ov-head">
     <h2 id="detailTitle">Title</h2>
-    <button class="ov-close" id="closeDetail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="ov-close" id="closeDetail" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body" id="detailBody"></div>
 </div>
@@ -394,7 +614,7 @@
 <!-- episode detail overlay -->
 <div class="overlay" id="episodeOverlay">
   <div class="ep-hero" id="epHero">
-    <button class="ep-hero-close" id="closeEpisode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="ep-hero-close" id="closeEpisode" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
   </div>
   <div class="ov-body" style="padding-top:16px;">
     <div class="title-pill" id="epShowPill"><span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
@@ -402,7 +622,7 @@
     <div class="ep-sub-detail" id="epSubLine"></div>
     <div class="ep-meta-row">
       <span class="ep-meta-item" id="epStatusLine"></span>
-      <button class="tick static" id="epTickBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button class="tick static" id="epTickBtn" aria-label="Mark this episode watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
     </div>
     <div class="section-title" id="epStreamingTitle" style="display:none;">Where to watch</div>
     <div id="epStreamingLinks" class="stream-links"></div>
@@ -414,17 +634,25 @@
 <!-- show detail overlay -->
 <div class="overlay" id="showDetailOverlay">
   <div class="ep-hero" id="showHero">
-    <button class="ep-hero-close" id="closeShowDetail"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-    <button class="ep-hero-menu" id="showMenuBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    <button class="ep-hero-close" id="closeShowDetail" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="ep-hero-menu" id="showMenuBtn" aria-label="More actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+    <div class="action-menu" id="showActionMenu">
+      <button class="action-menu-item" id="showActionEdit">Edit Tracking</button>
+      <button class="action-menu-item danger-text" id="showActionRemove">Remove from List</button>
+    </div>
+    <img class="show-hero-poster" id="showHeroPoster" alt="" />
   </div>
   <div class="ov-body" style="padding-top:16px;">
-    <h2 id="showDetailTitle" style="font-size:19px; margin:0 0 4px;"></h2>
+    <h2 id="showDetailTitle"></h2>
+    <div class="detail-native" id="showDetailNative" style="display:none;"></div>
     <div class="tabs" id="showDetailTabs" style="padding:8px 0 14px;">
       <button class="tab active" data-sdt="about">About</button>
       <button class="tab" data-sdt="episodes">Episodes</button>
+      <button class="tab" data-sdt="journal">Journal</button>
     </div>
     <div id="showDetailAbout"></div>
     <div id="showDetailEpisodes" style="display:none;"></div>
+    <div id="showDetailJournal" style="display:none;"></div>
   </div>
 </div>
 
@@ -432,7 +660,7 @@
 <div class="overlay" id="importOverlay">
   <div class="ov-head">
     <h2>TV Time Import</h2>
-    <button class="ov-close" id="closeImport"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="ov-close" id="closeImport" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div class="import-step active" id="importStep1">
@@ -486,7 +714,7 @@
 
   <div class="ov-head">
     <h2 id="listsHeadTitle">Custom Lists</h2>
-    <button class="ov-close" id="closeLists"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="ov-close" id="closeLists" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div id="listsHome">
@@ -516,7 +744,7 @@
 <div class="overlay" id="sequelsOverlay">
   <div class="ov-head">
     <h2>Missing Sequels</h2>
-    <button class="ov-close" id="closeSequels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    <button class="ov-close" id="closeSequels" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body">
     <div class="hint">Checks every anime you've marked Completed against AniList's own sequel data, and shows any next season you haven't added yet — the same idea as the community "Sequel Finder" tool AniList users built for this exact problem.</div>
@@ -526,10 +754,50 @@
   </div>
 </div>
 
+<!-- timeline overlay -->
+<div class="overlay" id="timelineOverlay">
+  <div class="ov-head">
+    <h2>Timeline</h2>
+    <button class="ov-close" id="closeTimeline" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div class="ov-body" id="timelineBody"></div>
+</div>
+
+<!-- daily wisdom overlay -->
+<div class="overlay" id="wisdomOverlay">
+  <div class="ov-head">
+    <h2>Today's Anime Wisdom</h2>
+    <button class="ov-close" id="closeWisdom" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div class="ov-body">
+    <div class="wisdom-card">
+      <div class="wisdom-quote" id="wisdomQuote"></div>
+      <div class="wisdom-attribution" id="wisdomAttribution"></div>
+    </div>
+  </div>
+</div>
+
+<!-- notification settings overlay -->
+<div class="overlay" id="notifSettingsOverlay">
+  <div class="ov-head">
+    <h2>Notification Settings</h2>
+    <button class="ov-close" id="closeNotifSettings" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  </div>
+  <div class="ov-body" id="notifSettingsBody"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 (() => {
+  // The browser's own scroll-restoration (history.scrollRestoration
+  // defaults to "auto") fights the Home feed's deliberate auto-scroll to
+  // "Watch Next" on load — it silently overrides the JS-driven scrollTo
+  // a moment later, snapping back to whatever position it thinks the page
+  // "should" be at. Disabling it hands scroll position entirely to the
+  // app's own logic below, which is the only thing that should control it.
+  if("scrollRestoration" in history) history.scrollRestoration = "manual";
+
   const STORAGE_KEY = "anitrack_list_v2";
   const API = "https://graphql.anilist.co";
   const $ = (sel) => document.querySelector(sel);
@@ -540,6 +808,10 @@
     reading: [["reading","Reading"],["planned","Plan to Read"],["completed","Completed"],["onhold","On Hold"],["dropped","Dropped"]]
   };
   const STATUS_COLOR = { watching:"accent", reading:"accent", planned:"amber", completed:"status-green", onhold:"status-orange", dropped:"status-red" };
+  // The filled star icon (favorites, ratings, score badges, milestones,
+  // earned badges) — the same markup repeated verbatim seven times before
+  // being pulled out here.
+  const STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>';
 
   // ---------- storage ----------
   function loadList(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch(e){ return []; } }
@@ -547,6 +819,481 @@
   let list = loadList();
   let mode = "anime";           // 'anime' | 'reading'
   let currentFilter = "all";
+
+  // ---------- timeline / notifications ----------
+  // Timeline is AniTrack's combined event log: system notifications (new
+  // episode, airing reminders, milestones...) and the user's own journal
+  // history (started/finished dates) live side by side, one chronological
+  // story — not a generic notification inbox. Persistent in localStorage,
+  // capped so it can't grow unbounded, deduped by a stable id per event so
+  // the same real-world thing is never logged (or notified) twice.
+  const TIMELINE_KEY = "anitrack_timeline_v1";
+  const TIMELINE_MAX = 500;
+  function loadTimeline(){ try{ return JSON.parse(localStorage.getItem(TIMELINE_KEY)) || []; }catch(e){ return []; } }
+  function saveTimeline(){ localStorage.setItem(TIMELINE_KEY, JSON.stringify(timeline)); }
+  let timeline = loadTimeline();
+
+  // Every category is independently optional (per-category toggle), plus a
+  // master switch gating whether any of them are allowed to fire a real
+  // browser Notification — the honest limitation noted where alerts used to
+  // live still applies: this is a static app with no push server, so any of
+  // these can only actually fire while AniTrack itself is open and running
+  // its periodic scan, not truly in the background.
+  const NOTIF_SETTINGS_KEY = "anitrack_notif_settings_v1";
+  const DEFAULT_NOTIF_SETTINGS = {
+    masterEnabled: localStorage.getItem("anitrack_alerts") === "1",
+    newEpisode: true,
+    newChapter: true,
+    airingReminders: true,
+    releaseCountdown: true,
+    continueWatching: true,
+    continueReading: true,
+    watchLaterReminders: true,
+    journalAnniversaries: true,
+    statisticsMilestones: true,
+    continueFrequencyDays: 10,
+    watchLaterFrequencyDays: 30
+  };
+  function loadNotifSettings(){
+    try{
+      const saved = JSON.parse(localStorage.getItem(NOTIF_SETTINGS_KEY));
+      if(saved) return Object.assign({}, DEFAULT_NOTIF_SETTINGS, saved);
+    }catch(e){}
+    return Object.assign({}, DEFAULT_NOTIF_SETTINGS);
+  }
+  function saveNotifSettings(){ localStorage.setItem(NOTIF_SETTINGS_KEY, JSON.stringify(notifSettings)); }
+  let notifSettings = loadNotifSettings();
+
+  // Adds one Timeline entry if (and only if) an entry with this exact id
+  // doesn't already exist — this single choke point is what guarantees no
+  // event is ever notified or logged twice, no matter how many detectors
+  // run or how often the scan repeats. `silent: true` (backfilled journal
+  // history, one-time milestone baselining) logs to Timeline without
+  // popping a live Notification — not every remembered thing is a ping.
+  function addTimelineEntry(entry){
+    if(timeline.some(e => e.id === entry.id)) return false;
+    const full = Object.assign({ read: !!entry.silent }, entry);
+    timeline.unshift(full);
+    timeline.sort((a,b) => b.timestamp - a.timestamp);
+    if(timeline.length > TIMELINE_MAX) timeline.length = TIMELINE_MAX;
+    saveTimeline();
+    if(!entry.silent) maybeFireNotification(full);
+    return true;
+  }
+  function maybeFireNotification(entry){
+    if(!notifSettings.masterEnabled || !notifSettings[entry.settingKey]) return;
+    if(!("Notification" in window) || Notification.permission !== "granted") return;
+    try{ new Notification(entry.title, { body: entry.description, icon: "icon-192.png" }); }
+    catch(e){ /* some browsers require SW-based notifications; fail silently */ }
+  }
+
+  // ---------- daily anime wisdom ----------
+  // Deliberately minimal: the Daily Wisdom dashboard widget itself is a
+  // separate, not-yet-built roadmap item (FEATURE_ROADMAP Phase 4). This is
+  // just enough — a small local quote set and a lightweight overlay — for
+  // the "Daily Wisdom" notification to have something real to open, rather
+  // than pointing at a feature that doesn't exist yet.
+  // `id` matches the reference design's bottom-left quote counter (001,
+  // 002...). character_avatar_url / background_url are left undefined —
+  // no real art ships with a static single-file app with no asset
+  // pipeline; the widget derives a generated monogram + gradient from the
+  // character/series text instead (see avatarFor/gradientFor). Swapping in
+  // real URLs later needs no shape change, just non-empty values here.
+  const WISDOM_QUOTES = [
+    { id:1, quote:"A lesson without pain is meaningless.", character:"Edward Elric", series:"Fullmetal Alchemist: Brotherhood" },
+    { id:2, quote:"If you don't take risks, you can't create a future.", character:"Monkey D. Luffy", series:"One Piece" },
+    { id:3, quote:"Whatever you lose, you'll find it again. But what you throw away you'll never get back.", character:"Kenshin Himura", series:"Rurouni Kenshin" },
+    { id:4, quote:"Hard work is worthless for those that don't believe in themselves.", character:"Naruto Uzumaki", series:"Naruto" },
+    { id:5, quote:"Fear is not evil. It tells you what your weakness is.", character:"Gildarts Clive", series:"Fairy Tail" },
+    { id:6, quote:"The world isn't perfect. But it's there for us, doing the best it can.", character:"Roy Mustang", series:"Fullmetal Alchemist: Brotherhood" },
+    { id:7, quote:"It's not the face that makes someone a monster; it's the choices they make with their lives.", character:"Naruto Uzumaki", series:"Naruto" },
+    { id:8, quote:"People's lives don't end when they die. It ends when they lose faith.", character:"Itachi Uchiha", series:"Naruto" },
+    { id:9, quote:"A person grows up when he's able to overcome hardships.", character:"Jiraiya", series:"Naruto" },
+    { id:10, quote:"No matter how deep the night, it always turns to day, eventually.", character:"Brook", series:"One Piece" },
+    { id:11, quote:"You should enjoy the little detours to the fullest. Because that's where you'll find the things more important than what you want.", character:"Ging Freecss", series:"Hunter x Hunter" },
+    { id:12, quote:"Whether you win or lose, you'll learn something valuable.", character:"Yuri Katsuki", series:"Yuri!!! on Ice" },
+    { id:13, quote:"If you don't like your destiny, don't accept it.", character:"Naruto Uzumaki", series:"Naruto" },
+    { id:14, quote:"The moment you think of giving up, think of the reason why you held on so long.", character:"Natsu Dragneel", series:"Fairy Tail" },
+    { id:15, quote:"Being weak is nothing to be ashamed of. Staying weak is.", character:"Fuegoleon Vermillion", series:"Black Clover" },
+    { id:16, quote:"Once you start walking the path of vengeance, you'll never be able to live normally again.", character:"Itachi Uchiha", series:"Naruto" }
+  ];
+  function daysSinceEpoch(){ return Math.floor(startOfDay(Date.now()) / 86400000); }
+  function getTodaysWisdom(){ return WISDOM_QUOTES[daysSinceEpoch() % WISDOM_QUOTES.length]; }
+  // No scanDailyWisdom() / "wisdom" notification anymore — the dashboard
+  // widget itself now shows today's quote directly and prominently, so a
+  // separate "Today's Anime Wisdom is ready" notification announcing the
+  // same thing the widget already displays was pure duplication.
+  // Accepts an optional specific quote so the dashboard widget's Refresh
+  // button (which can show something other than today's canonical quote)
+  // opens the detail overlay for whatever is actually currently displayed,
+  // not silently swapping back to today's quote.
+  function openWisdomOverlay(quoteOverride){
+    const w = quoteOverride || getTodaysWisdom();
+    $("#wisdomQuote").textContent = `"${w.quote}"`;
+    $("#wisdomAttribution").textContent = `${w.character} — ${w.series}`;
+    $("#wisdomOverlay").classList.add("open");
+  }
+
+  // A small fixed set of dark, moody gradients standing in for a real
+  // per-quote background photo (no asset pipeline in a static single-file
+  // app, and no legitimate local source of real anime screenshots) — picked
+  // deterministically per quote id so the same quote always reads the same
+  // "scene," not reshuffled on every render.
+  const WISDOM_GRADIENTS = [
+    "linear-gradient(160deg, #0b0f1a 0%, #131a2b 55%, #1c1440 100%)",
+    "linear-gradient(160deg, #0c1210 0%, #10201c 55%, #123024 100%)",
+    "linear-gradient(160deg, #150d10 0%, #241521 55%, #34162c 100%)",
+    "linear-gradient(160deg, #0b1420 0%, #101f33 55%, #143654 100%)",
+    "linear-gradient(160deg, #140f08 0%, #241a0d 55%, #3a2710 100%)"
+  ];
+  function gradientFor(quote){ return WISDOM_GRADIENTS[quote.id % WISDOM_GRADIENTS.length]; }
+
+  // First four reuse the app's existing accent/status colors (single source
+  // of truth); the last two are bespoke additions purely for avatar
+  // variety, with no equivalent design-system token.
+  const AVATAR_HUES = ["var(--accent)", "var(--amber)", "var(--status-green)", "var(--status-red)", "#8B7FE8", "#4FBFC0"];
+  function avatarInitial(name){ return (name || "?").trim().charAt(0).toUpperCase(); }
+  function avatarColorFor(name){
+    let hash = 0;
+    for(let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+    return AVATAR_HUES[hash % AVATAR_HUES.length];
+  }
+  // Keeps the widget's vertical side text (a tight column at fixed height)
+  // from overflowing on long series names like "Fullmetal Alchemist:
+  // Brotherhood" — the full name is never hidden, since it's always shown
+  // in full on the horizontal "— series —" line at the bottom.
+  function truncateMid(str, max){ return str.length > max ? str.slice(0, max - 1) + "…" : str; }
+
+  // Refresh is a lightweight, ephemeral "show me another one" — it swaps
+  // what's currently displayed without persisting, so a reload always goes
+  // back to today's deterministic quote rather than getting stuck on
+  // whatever was last shuffled to.
+  let currentWisdomQuote = null;
+  function activeWisdomQuote(){ return currentWisdomQuote || getTodaysWisdom(); }
+
+  function buildWisdomWidgetBlock(){
+    const wrap = document.createElement("div");
+    if(localStorage.getItem("anitrack_wisdom_hidden") === "1"){
+      wrap.className = "wisdom-hidden-hint";
+      wrap.innerHTML = `<span>Daily Wisdom widget hidden.</span><button id="wisdomShowBtn">Show</button>`;
+      wrap.querySelector("#wisdomShowBtn").addEventListener("click", () => {
+        localStorage.removeItem("anitrack_wisdom_hidden");
+        render();
+      });
+      return wrap;
+    }
+
+    wrap.className = "wisdom-widget-wrap";
+    const q = activeWisdomQuote();
+    const dateLabel = new Date().toLocaleDateString(undefined, { day:"2-digit", month:"short", year:"numeric" }).toUpperCase();
+    const qidLabel = String(q.id).padStart(3, "0");
+    wrap.innerHTML = `
+      <div class="wisdom-widget">
+        <div class="ww-chrome">
+          <div class="ww-chrome-label"><span class="ww-pixel-accent"><i></i><i></i><i></i><i></i></span><span>DAILY WISDOM</span><span class="ww-jp">今日の名言</span></div>
+          <div class="ww-chrome-controls">
+            <button class="ww-btn" id="wisdomRefreshBtn" title="Show another quote" aria-label="Show another quote"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></button>
+            <button class="ww-btn" id="wisdomHideBtn" title="Hide this widget" aria-label="Hide this widget"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/></svg></button>
+          </div>
+        </div>
+        <div class="ww-scene" tabindex="0" role="button" aria-label="Open full quote" style="background-image:${gradientFor(q)}">
+          <div class="ww-scene-top">
+            <div class="ww-date">${dateLabel}</div>
+            <div class="ww-avatar" style="background:${avatarColorFor(q.character)}">${escapeHtml(avatarInitial(q.character))}</div>
+          </div>
+          <div class="ww-dots"><span></span><span></span><span></span><span></span></div>
+          <div class="ww-quote-block">
+            <span class="ww-quote-mark">"</span>
+            <p class="ww-quote-text">${escapeHtml(q.quote)}</p>
+          </div>
+          <div class="ww-vertical"><span class="ww-vc">${escapeHtml(truncateMid(q.character.toUpperCase(), 15))}</span><span class="ww-vs">${escapeHtml(truncateMid(q.series.toUpperCase(), 15))}</span></div>
+          <div class="ww-bottom-row">
+            <span class="ww-qid">${qidLabel}</span>
+            <span class="ww-series-line">— ${escapeHtml(q.series.toUpperCase())} —</span>
+          </div>
+        </div>
+      </div>`;
+
+    wrap.querySelector("#wisdomRefreshBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pool = WISDOM_QUOTES.filter(x => x.id !== q.id);
+      currentWisdomQuote = pool[Math.floor(Math.random() * pool.length)];
+      render();
+    });
+    wrap.querySelector("#wisdomHideBtn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      localStorage.setItem("anitrack_wisdom_hidden", "1");
+      render();
+    });
+    const scene = wrap.querySelector(".ww-scene");
+    scene.addEventListener("click", () => openWisdomOverlay(q));
+    scene.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openWisdomOverlay(q); }
+    });
+    return wrap;
+  }
+
+  // ---------- journal timeline events ----------
+  // Two distinct things happen here, both from the same startedDate /
+  // finishedDate fields the Journal tab already writes: (1) a silent,
+  // one-time historical entry dated to the actual day it happened — so
+  // "Started Vinland Saga" lands under whatever relative bucket that date
+  // now falls into, even if entered well after the fact — and (2) a live,
+  // celebratory entry that fires specifically ON each yearly anniversary.
+  function scanJournalHistory(){
+    if(!notifSettings.journalAnniversaries) return;
+    list.forEach(item => {
+      const title = item.english || item.romaji;
+      const poster = item.customCover || item.cover || null;
+      if(item.startedDate){
+        addTimelineEntry({
+          id: `journal-started-${item.id}`, type:"journal_started", settingKey:"journalAnniversaries", category:"journal",
+          title: `Started ${title}`, description: `You started this on ${item.startedDate}.`,
+          timestamp: new Date(item.startedDate + "T00:00:00").getTime(),
+          mediaId: item.id, mediaType: item.type, poster, silent:true
+        });
+      }
+      if(item.finishedDate){
+        addTimelineEntry({
+          id: `journal-finished-${item.id}`, type:"journal_finished", settingKey:"journalAnniversaries", category:"journal",
+          title: `Finished ${title}`, description: `You finished this on ${item.finishedDate}.`,
+          timestamp: new Date(item.finishedDate + "T00:00:00").getTime(),
+          mediaId: item.id, mediaType: item.type, poster, silent:true
+        });
+      }
+    });
+  }
+  function scanJournalAnniversaries(){
+    if(!notifSettings.journalAnniversaries) return;
+    const today = new Date();
+    const todayMD = `${today.getMonth()}-${today.getDate()}`;
+    list.forEach(item => {
+      const title = item.english || item.romaji;
+      const poster = item.customCover || item.cover || null;
+      [["startedDate","started"], ["finishedDate","finished"]].forEach(([field, label]) => {
+        const val = item[field];
+        if(!val) return;
+        const d = new Date(val + "T00:00:00");
+        if(`${d.getMonth()}-${d.getDate()}` !== todayMD) return;
+        const yearsAgo = today.getFullYear() - d.getFullYear();
+        if(yearsAgo < 1) return;
+        addTimelineEntry({
+          id: `annv-${label}-${item.id}-${yearsAgo}`, type:`anniversary_${label}`, settingKey:"journalAnniversaries", category:"journal",
+          title: `🎉 You ${label} ${title} exactly ${yearsAgo} year${yearsAgo === 1 ? '' : 's'} ago today`,
+          description: label === "started" ? "Started this on this day." : "Finished this on this day.",
+          timestamp: Date.now(), mediaId: item.id, mediaType: item.type, poster
+        });
+      });
+    });
+  }
+
+  // ---------- statistics milestones ----------
+  // A round-number library ever crossing a threshold retroactively (e.g. a
+  // returning user who already has 300 completed anime the first time this
+  // ships) would otherwise fire a burst of every threshold at once — so the
+  // very first scan silently baselines whatever's already been crossed, and
+  // only thresholds crossed *after* that baseline ever pop a live celebration.
+  const COMPLETION_MILESTONES = [10, 25, 50, 100, 250, 500, 1000];
+  const UNIT_MILESTONES = [100, 500, 1000, 2500, 5000];
+  const HOURS_MILESTONES = [100, 500, 1000, 2500, 5000];
+  const JOURNAL_ENTRY_MILESTONES = [10, 50, 100, 250, 500];
+  function scanStatisticsMilestones(){
+    if(!notifSettings.statisticsMilestones) return;
+    const firstRun = localStorage.getItem("anitrack_milestones_baselined") !== "1";
+    const record = (id, title, description) => {
+      if(timeline.some(e => e.id === id)) return;
+      addTimelineEntry({
+        id, type:"milestone", settingKey:"statisticsMilestones", category:"milestone",
+        title, description, timestamp: Date.now(), mediaId:null, mediaType:null, poster:null, silent: firstRun
+      });
+    };
+
+    ["anime","reading"].forEach(type => {
+      const items = list.filter(i => i.type === type);
+      const label = type === "anime" ? "anime" : "manga";
+      const completed = items.filter(i => i.status === "completed").length;
+      COMPLETION_MILESTONES.forEach(n => { if(completed >= n) record(`milestone-completed-${type}-${n}`, `📚 Today marks your ${n}th completed ${label}`, `You've completed ${n} ${label} titles.`); });
+
+      const units = items.reduce((sum,i) => sum + i.progress, 0);
+      const unitWord = type === "anime" ? "Episodes Watched" : "Chapters Read";
+      UNIT_MILESTONES.forEach(n => { if(units >= n) record(`milestone-units-${type}-${n}`, `${n} ${unitWord}`, `You've ${type === "anime" ? "watched" : "read"} ${n} ${type === "anime" ? "episodes" : "chapters"}.`); });
+    });
+
+    const totalHours = computeTotalHours(list.filter(i => i.type === "anime"));
+    HOURS_MILESTONES.forEach(n => { if(totalHours >= n) record(`milestone-hours-${n}`, `${n} Hours Watched`, `You've spent ${n}+ hours watching anime.`); });
+
+    const journalCount = list.filter(hasJournalEntry).length;
+    JOURNAL_ENTRY_MILESTONES.forEach(n => { if(journalCount >= n) record(`milestone-journal-${n}`, `${n} Journal Entries`, `You've journaled ${n} titles.`); });
+
+    if(firstRun) localStorage.setItem("anitrack_milestones_baselined", "1");
+  }
+
+  // ---------- continue watching / reading / watch later reminders ----------
+  // Reuses the exact "stale" definition the Home feed's "Haven't Watched For
+  // A While" section already computes (active status + no history entry
+  // within RECENT_DAYS) so a title showing up there and a reminder firing
+  // for it are always the same judgment, never two different opinions.
+  function scanContinueReminders(){
+    ["anime","reading"].forEach(type => {
+      const settingKey = type === "anime" ? "continueWatching" : "continueReading";
+      if(!notifSettings[settingKey]) return;
+      const freqDays = notifSettings.continueFrequencyDays || 10;
+      const activeStatus = type === "anime" ? "watching" : "reading";
+      list.filter(i => i.type === type && i.status === activeStatus).forEach(item => {
+        const lw = lastWatchedAt(item);
+        const idle = lw !== null ? daysSince(lw) : null;
+        if(idle === null || idle < freqDays) return;
+        const bucket = Math.floor(idle / freqDays);
+        const title = item.english || item.romaji;
+        const unit = type === "anime" ? "Episode" : "Chapter";
+        addTimelineEntry({
+          id: `continue-${type}-${item.id}-${bucket}`, type:"continue_reminder", settingKey, category:"continue",
+          title: `You stopped ${title} on ${unit} ${item.progress}`,
+          description: `It's been ${Math.floor(idle)} days since your last ${type === "anime" ? "episode" : "chapter"}.`,
+          timestamp: Date.now(), mediaId: item.id, mediaType: item.type, poster: item.customCover || item.cover || null
+        });
+      });
+    });
+  }
+  // "Watch Later" reminders cover planned-but-untouched titles — infrequent
+  // by design (monthly-scale bucketing), since these are the least urgent,
+  // most easily-annoying category if overdone.
+  function scanWatchLaterReminders(){
+    if(!notifSettings.watchLaterReminders) return;
+    const freqDays = notifSettings.watchLaterFrequencyDays || 30;
+    list.filter(i => i.status === "planned").forEach(item => {
+      // No dedicated "added to Plan to Watch" timestamp exists, so this
+      // approximates with updatedAt (last edit of any kind) — imperfect if
+      // the user edits something else on a planned title, but the closest
+      // signal available without adding a new field for one reminder type.
+      const idleDays = (Date.now() - (item.updatedAt || Date.now())) / 86400000;
+      if(idleDays < freqDays) return;
+      const bucket = Math.floor(idleDays / freqDays);
+      const title = item.english || item.romaji;
+      const months = Math.round(idleDays / 30);
+      const verb = item.type === "anime" ? "watch" : "read";
+      addTimelineEntry({
+        id: `watchlater-${item.id}-${bucket}`, type:"watch_later", settingKey:"watchLaterReminders", category:"watchlater",
+        title: `You've wanted to ${verb} ${title} for ${months} month${months === 1 ? '' : 's'}`,
+        description: `Still sitting in your ${item.type === "anime" ? "Plan to Watch" : "Plan to Read"} list.`,
+        timestamp: Date.now(), mediaId: item.id, mediaType: item.type, poster: item.customCover || item.cover || null
+      });
+    });
+  }
+
+  // ---------- timeline UI ----------
+  // Icons keyed by the entry's broad category (not its narrower type) —
+  // seven categories map to seven shapes, which reads clearly without a
+  // maintenance burden of one icon per fine-grained event type.
+  const TL_ICONS = {
+    anime: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10 8 6 4-6 4V8Z"/><rect width="20" height="14" x="2" y="5" rx="2"/></svg>`,
+    reading: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
+    wisdom: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>`,
+    journal: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6"/><path d="M9 11h6"/></svg>`,
+    milestone: STAR_SVG,
+    continue: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+    watchlater: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`
+  };
+
+  // Relative-time buckets rather than a flat "Today / Yesterday / Older" —
+  // this is the whole point of calling it a Timeline instead of a
+  // notification inbox: a two-year-old journal entry should read as
+  // "2 Years Ago," not disappear into a generic catch-all.
+  function timelineBucketLabel(ts){
+    const daysAgo = Math.floor((startOfDay(Date.now()) - startOfDay(ts)) / 86400000);
+    if(daysAgo <= 0) return "Today";
+    if(daysAgo === 1) return "Yesterday";
+    if(daysAgo < 7) return "Earlier This Week";
+    if(daysAgo < 14) return "Last Week";
+    if(daysAgo < 30){ const w = Math.floor(daysAgo / 7); return `${w} Weeks Ago`; }
+    if(daysAgo < 365){ const m = Math.floor(daysAgo / 30); return m === 1 ? "1 Month Ago" : `${m} Months Ago`; }
+    const y = Math.floor(daysAgo / 365);
+    return y === 1 ? "1 Year Ago" : `${y} Years Ago`;
+  }
+
+  function buildTimelineRow(entry){
+    const iconSvg = TL_ICONS[entry.category] || TL_ICONS.milestone;
+    const media = entry.poster
+      ? `<img class="tl-poster" src="${entry.poster}" alt="" loading="lazy" />`
+      : `<div class="tl-icon">${iconSvg}</div>`;
+    const time = new Date(entry.timestamp).toLocaleString(undefined, { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+    return `<div class="tl-row${entry.read ? '' : ' unread'}" data-id="${entry.id}">
+      ${media}
+      <div class="tl-body">
+        <div class="tl-title">${escapeHtml(entry.title)}</div>
+        <div class="tl-desc">${escapeHtml(entry.description)}</div>
+        <div class="tl-time">${time}</div>
+      </div>
+    </div>`;
+  }
+
+  let timelineOverlayOpen = false;
+  function renderTimeline(){
+    const el = $("#timelineBody");
+    if(!timeline.length){
+      el.innerHTML = `<div class="empty">Your anime memories begin here.<br/>As you watch, read, and journal, it'll all show up in one place.</div>`;
+      return;
+    }
+    const groups = [];
+    let lastLabel = null;
+    timeline.forEach(entry => {
+      const label = timelineBucketLabel(entry.timestamp);
+      if(label !== lastLabel){ groups.push({ label, entries: [] }); lastLabel = label; }
+      groups[groups.length - 1].entries.push(entry);
+    });
+    el.innerHTML = groups.map(g => `<div class="section-title">${g.label}</div>${g.entries.map(buildTimelineRow).join('')}`).join('');
+    el.querySelectorAll(".tl-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const entry = timeline.find(e => e.id === row.dataset.id);
+        if(entry) navigateToTimelineEntry(entry);
+      });
+    });
+  }
+  function openTimelineOverlay(){
+    timelineOverlayOpen = true;
+    renderTimeline();
+    $("#timelineOverlay").classList.add("open");
+    // Opening the Timeline is the natural "I've seen these" moment, the
+    // same way opening a phone's notification shade clears its badge.
+    if(timeline.some(e => !e.read)){
+      timeline.forEach(e => { e.read = true; });
+      saveTimeline();
+    }
+  }
+  function closeTimelineOverlay(){
+    timelineOverlayOpen = false;
+    $("#timelineOverlay").classList.remove("open");
+    updateNotifWidget();
+  }
+  $("#closeTimeline").addEventListener("click", closeTimelineOverlay);
+  $("#closeWisdom").addEventListener("click", () => $("#wisdomOverlay").classList.remove("open"));
+
+  function navigateToTimelineEntry(entry){
+    closeTimelineOverlay();
+    if(entry.type === "wisdom"){ openWisdomOverlay(); return; }
+    if(entry.type === "milestone"){ switchTab("more"); return; }
+    if(entry.mediaId != null && entry.mediaType){
+      const item = itemById(entry.mediaId, entry.mediaType);
+      if(item){ switchTab(entry.mediaType); openShowDetail(item); }
+    }
+  }
+
+  function buildNotifWidgetBlock(){
+    const wrap = document.createElement("div");
+    wrap.className = "feed-section";
+    const recent = timeline.slice(0, 3);
+    if(!recent.length) return wrap;
+    const unread = timeline.filter(e => !e.read).length;
+    wrap.innerHTML = `
+      <div class="cal-widget">
+        <div class="cw-title">🔔 Notifications${unread ? ` (${unread})` : ''}</div>
+        <div class="notif-widget-list">${recent.map(e => `<div class="notif-widget-item">${escapeHtml(e.title)}</div>`).join('')}</div>
+        <button class="btn ghost notif-view-all" style="width:100%; margin-top:10px;">View All</button>
+      </div>`;
+    wrap.querySelector(".notif-view-all").addEventListener("click", openTimelineOverlay);
+    return wrap;
+  }
+  function updateNotifWidget(){ render(); }
 
   // ---------- toast ----------
   let toastTimer = null;
@@ -564,38 +1311,86 @@
   window.addEventListener("online", () => { updateNetDot(); toast("Back online — syncing…"); refreshAiring(); });
   window.addEventListener("offline", updateNetDot);
 
-  // ---------- foreground episode alerts ----------
-  // Honest limitation: without a push server, this can only fire while the
-  // app itself is open and running its periodic refresh — not a true
-  // background/closed-app push notification.
-  let alertsEnabled = localStorage.getItem("anitrack_alerts") === "1";
-  function updateAlertBtn(){
-    $("#moreNotifyStatus").textContent = alertsEnabled ? "On" : "Off";
+  // ---------- notification permission ----------
+  // The old single Episode Alerts on/off row now opens the full Notification
+  // Settings page (openNotifSettings, defined further down) instead of
+  // toggling directly — this row just keeps a quick live summary.
+  function updateMoreNotifyRow(){
+    $("#moreNotifyStatus").textContent = notifSettings.masterEnabled ? "On" : "Off";
   }
-  updateAlertBtn();
-  $("#moreNotifyBtn").addEventListener("click", async () => {
-    if(alertsEnabled){
-      alertsEnabled = false;
-      localStorage.setItem("anitrack_alerts", "0");
-      updateAlertBtn();
-      toast("Episode alerts turned off");
-      return;
-    }
-    if(!("Notification" in window)){ toast("Notifications aren't supported in this browser."); return; }
+  updateMoreNotifyRow();
+  $("#moreNotifyBtn").addEventListener("click", () => openNotifSettings());
+  async function requestNotifPermissionIfNeeded(){
+    if(!("Notification" in window)) return false;
+    if(Notification.permission === "granted") return true;
+    if(Notification.permission === "denied") return false;
     const perm = await Notification.requestPermission();
-    if(perm !== "granted"){ toast("Notification permission denied."); return; }
-    alertsEnabled = true;
-    localStorage.setItem("anitrack_alerts", "1");
-    updateAlertBtn();
-    toast("Alerts on — only fire while the app is open, not in the background.");
-  });
-  function notifyNewEpisodes(titles){
-    if(!alertsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
-    const shown = titles.slice(0, 5);
-    const body = shown.join(", ") + (titles.length > 5 ? ` and ${titles.length - 5} more` : "");
-    try{ new Notification("New episodes ready", { body, icon: "icon-192.png" }); }
-    catch(e){ /* some browsers require SW-based notifications; fail silently */ }
+    return perm === "granted";
   }
+
+  const NOTIF_CATEGORY_DEFS = [
+    { key:"newEpisode", label:"New Episode Notifications", desc:"When a tracked anime's next episode becomes available." },
+    { key:"newChapter", label:"New Chapter Notifications", desc:"When a tracked manga, manhwa, or manhua gets a new chapter." },
+    { key:"airingReminders", label:"Airing Reminders", desc:"Episode airing today, season premieres, and season finales." },
+    { key:"releaseCountdown", label:"Release Countdown", desc:"A heads-up when an episode is about to air within the hour." },
+    { key:"continueWatching", label:"Continue Watching", desc:"Gentle nudges for anime you've stopped mid-way." },
+    { key:"continueReading", label:"Continue Reading", desc:"Gentle nudges for manga you've stopped mid-way." },
+    { key:"watchLaterReminders", label:"Watch Later Reminders", desc:"Infrequent reminders about titles sitting in Plan to Watch/Read." },
+    { key:"journalAnniversaries", label:"Anime Journal Anniversaries", desc:"Celebrates when you started or finished a title, years ago today." },
+    { key:"statisticsMilestones", label:"Statistics Milestones", desc:"Marks round-number achievements like 100 episodes or 500 chapters." }
+  ];
+  function renderNotifSettings(){
+    const el = $("#notifSettingsBody");
+    const masterOn = notifSettings.masterEnabled;
+    el.innerHTML = `
+      <div class="hint">Notifications only fire while AniTrack is open and running — there's no server behind this app, so nothing can be pushed while it's closed. Every category below is independently optional.</div>
+      <div class="notif-setting-row">
+        <div><div class="nsr-label">Enable Notifications</div><div class="nsr-desc">Master switch — turns every category on or off at once.</div></div>
+        <button class="settings-toggle${masterOn ? ' on' : ''}" data-master>${masterOn ? 'On' : 'Off'}</button>
+      </div>
+      ${NOTIF_CATEGORY_DEFS.map(c => `
+        <div class="notif-setting-row">
+          <div><div class="nsr-label">${escapeHtml(c.label)}</div><div class="nsr-desc">${escapeHtml(c.desc)}</div></div>
+          <button class="settings-toggle${notifSettings[c.key] ? ' on' : ''}" data-key="${c.key}" ${masterOn ? '' : 'disabled'}>${notifSettings[c.key] ? 'On' : 'Off'}</button>
+        </div>`).join('')}
+      <div class="notif-setting-row">
+        <div><div class="nsr-label">Continue Watching/Reading Frequency</div><div class="nsr-desc">How many idle days before a reminder.</div></div>
+        <select class="notif-freq-select" id="continueFreqSelect" ${masterOn ? '' : 'disabled'}>
+          ${[3,7,10,14,21,30].map(n => `<option value="${n}" ${notifSettings.continueFrequencyDays === n ? 'selected' : ''}>${n} days</option>`).join('')}
+        </select>
+      </div>
+      <div class="notif-setting-row">
+        <div><div class="nsr-label">Watch Later Frequency</div><div class="nsr-desc">How many idle days before a reminder.</div></div>
+        <select class="notif-freq-select" id="watchLaterFreqSelect" ${masterOn ? '' : 'disabled'}>
+          ${[14,30,60,90].map(n => `<option value="${n}" ${notifSettings.watchLaterFrequencyDays === n ? 'selected' : ''}>${n} days</option>`).join('')}
+        </select>
+      </div>
+    `;
+    el.querySelector("[data-master]").addEventListener("click", async () => {
+      if(!notifSettings.masterEnabled){
+        const granted = await requestNotifPermissionIfNeeded();
+        if(!granted) toast("Notification permission denied — Timeline will still log events, just without a popup.");
+      }
+      notifSettings.masterEnabled = !notifSettings.masterEnabled;
+      saveNotifSettings();
+      updateMoreNotifyRow();
+      renderNotifSettings();
+    });
+    el.querySelectorAll("[data-key]").forEach(btn => btn.addEventListener("click", () => {
+      notifSettings[btn.dataset.key] = !notifSettings[btn.dataset.key];
+      saveNotifSettings();
+      renderNotifSettings();
+    }));
+    const cSel = el.querySelector("#continueFreqSelect");
+    if(cSel) cSel.addEventListener("change", (e) => { notifSettings.continueFrequencyDays = Number(e.target.value); saveNotifSettings(); });
+    const wSel = el.querySelector("#watchLaterFreqSelect");
+    if(wSel) wSel.addEventListener("change", (e) => { notifSettings.watchLaterFrequencyDays = Number(e.target.value); saveNotifSettings(); });
+  }
+  function openNotifSettings(){
+    renderNotifSettings();
+    $("#notifSettingsOverlay").classList.add("open");
+  }
+  $("#closeNotifSettings").addEventListener("click", () => $("#notifSettingsOverlay").classList.remove("open"));
 
   // ---------- AniList ----------
   async function anilistQuery(query, variables){
@@ -623,6 +1418,25 @@
       Page(page: 1, perPage: 10) {
         media(search: $search, type: $type, sort: SEARCH_MATCH) {
           id title { romaji english } coverImage { medium } format status
+          episodes chapters volumes countryOfOrigin duration genres
+          nextAiringEpisode { airingAt episode }
+          streamingEpisodes { title thumbnail }
+          ${MEDIA_DETAIL_FIELDS}
+        }
+      }
+    }`;
+
+  // Discover's search intentionally omits the $type filter (unlike
+  // SEARCH_QUERY above, which the fabAdd overlay and TV Time resolver both
+  // deliberately scope to one type) so a single query returns anime and
+  // manga together, split client-side into "Shows" / "Reading" — otherwise
+  // results silently only matched whatever the bottom-nav mode happened to
+  // be, which read as "search mostly returns manga" with no explanation.
+  const DISCOVER_SEARCH_QUERY = `
+    query ($search: String) {
+      Page(page: 1, perPage: 16) {
+        media(search: $search, sort: SEARCH_MATCH) {
+          id type title { romaji english } coverImage { medium } format status
           episodes chapters volumes countryOfOrigin duration genres
           nextAiringEpisode { airingAt episode }
           streamingEpisodes { title thumbnail }
@@ -683,8 +1497,9 @@
 
   // Fetched on demand only when the Show Detail page's About tab is opened
   // for the first time (not part of the main list/search queries, to keep
-  // those light) — a small cast list with voice actors.
-  const CHARACTERS_QUERY = `
+  // those light) — cast, native title, studio/staff, air dates and
+  // recommendations in one request instead of several separate ones.
+  const SHOW_EXTRA_QUERY = `
     query ($id: Int) {
       Media(id: $id) {
         characters(sort: ROLE, perPage: 6) {
@@ -692,6 +1507,16 @@
             role
             node { name { full } image { medium } }
             voiceActors(language: JAPANESE) { name { full } }
+          }
+        }
+        title { native }
+        startDate { year }
+        endDate { year }
+        studios(isMain: true) { nodes { name } }
+        staff(perPage: 4) { edges { role node { name { full } } } }
+        recommendations(sort: RATING_DESC, perPage: 12) {
+          nodes {
+            mediaRecommendation { id type title { romaji english } coverImage { medium } averageScore }
           }
         }
       }
@@ -706,6 +1531,11 @@
 
 
   function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  // Shared loading indicator — a calm three-dot pulse instead of bare
+  // "Loading…" text, used everywhere the app waits on an AniList request.
+  function loadingHtml(label){
+    return `<div class="hint loading-row"><span class="loading-dots"><span></span><span></span><span></span></span>${label ? escapeHtml(label) : ""}</div>`;
+  }
   function originLabel(country, format){
     if(country === "KR") return "Manhwa";
     if(country === "CN") return "Manhua";
@@ -714,12 +1544,168 @@
   }
   function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
 
+  // ---------- Show Detail helpers ----------
+  const ORIGIN_LANGUAGE = { JP:"Japanese", KR:"Korean", CN:"Chinese", TW:"Chinese", US:"English", GB:"English" };
+  function originLanguageLabel(country){ return ORIGIN_LANGUAGE[country] || country || null; }
+
+  const MEDIA_STATUS_LABEL = { RELEASING:"Releasing", FINISHED:"Finished", NOT_YET_RELEASED:"Not yet released", CANCELLED:"Cancelled", HIATUS:"On hiatus" };
+  function mediaStatusLabel(status){ return MEDIA_STATUS_LABEL[status] || status || null; }
+
+  // AniList only gives us a franchise's immediate start/end year, not a
+  // reliable cross-season episode/season total without walking the whole
+  // relations graph (many extra requests) — so "Release years" reports this
+  // entry's own airing span rather than a franchise-wide figure.
+  function releaseYearsLabel(item){
+    const extra = item.extra;
+    if(!extra || !extra.startYear) return null;
+    if(extra.endYear && extra.endYear !== extra.startYear) return `${extra.startYear}–${extra.endYear}`;
+    if(!extra.endYear && item.mediaStatus === "RELEASING") return `${extra.startYear}–Present`;
+    return `${extra.startYear}`;
+  }
+
+  // Picks the most relevant staff credit for the "Director" (anime) or
+  // "Mangaka" (manga) row from AniList's free-text staff roles.
+  function pickCreator(staff, type){
+    const edges = (staff && staff.edges) || [];
+    if(!edges.length) return null;
+    const wanted = type === "anime" ? /director/i : /(story|art|creator)/i;
+    const match = edges.find(e => wanted.test(e.role)) || edges[0];
+    return match.node.name.full;
+  }
+
+  // ---------- calendar ----------
+  function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); }
+  function endOfDay(d){ const x = new Date(d); x.setHours(23,59,59,999); return x.getTime(); }
+
+  // Shared by the Home feed's "Haven't Watched For A While" section and the
+  // Continue Watching/Reading reminder detector — one definition of "when
+  // did you last touch this" for both.
+  function lastWatchedAt(item){
+    if(!item.history || !item.history.length) return null;
+    return item.history.reduce((max,h) => h.watchedAt && (!max || h.watchedAt > max) ? h.watchedAt : max, null);
+  }
+  function daysSince(dateStr){ return (Date.now() - new Date(dateStr).getTime()) / 86400000; }
+
+  function daysHoursUntil(targetMs){
+    const diff = Math.max(0, targetMs - Date.now());
+    const totalHours = Math.floor(diff / 3600000);
+    return { days: Math.floor(totalHours / 24), hours: totalHours % 24 };
+  }
+
+  // AniList only gives the immediate next episode — everything past that is
+  // this app assuming a weekly cadence (true for the vast majority of TV
+  // anime) and projecting forward, capped at the show's known episode
+  // total so a series doesn't get projected past its own finale.
+  function projectEpisodesInRange(item, startMs, endMs){
+    const results = [];
+    if(item.type !== "anime" || !item.nextAiringEpisode) return results;
+    let ep = item.nextAiringEpisode.episode;
+    let at = item.nextAiringEpisode.airingAt * 1000;
+    const cap = item.totalEpisodes;
+    while(at <= endMs){
+      if(cap && ep > cap) break;
+      if(at >= startMs) results.push({ item, episode: ep, airingAt: at });
+      ep++; at += 7 * 86400000;
+    }
+    return results;
+  }
+  function getUpcomingEpisodesInRange(allItems, startMs, endMs){
+    const results = [];
+    allItems.forEach(item => results.push(...projectEpisodesInRange(item, startMs, endMs)));
+    results.sort((a,b) => a.airingAt - b.airingAt);
+    return results;
+  }
+
+  // "Airing today" / season premiere / season finale / "airing within the
+  // hour" — all derived from the same real nextAiringEpisode data already
+  // used by the Calendar and Release Timeline, just re-purposed here as
+  // notification events instead of a browse view. Premiere/finale/today are
+  // mutually exclusive per episode (the most specific one wins) so a
+  // premiere doesn't also generate a redundant plain "airs today" entry.
+  function scanAiringNotifications(){
+    const animeItems = list.filter(i => i.type === "anime");
+    const todays = getUpcomingEpisodesInRange(animeItems, startOfDay(Date.now()), endOfDay(Date.now()));
+    todays.forEach(({ item, episode, airingAt }) => {
+      const title = item.english || item.romaji;
+      const poster = item.customCover || item.cover || null;
+      const dayKey = startOfDay(airingAt);
+      if(notifSettings.airingReminders){
+        const isPremiere = episode === 1;
+        const isFinale = item.totalEpisodes && episode === item.totalEpisodes;
+        if(isPremiere){
+          addTimelineEntry({
+            id: `premiere-${item.id}-${dayKey}`, type:"premiere", settingKey:"airingReminders", category:"anime",
+            title: `${title} premieres today`, description: `Season premiere airs today.`,
+            timestamp: Date.now(), mediaId: item.id, mediaType:"anime", poster
+          });
+        }else if(isFinale){
+          addTimelineEntry({
+            id: `finale-${item.id}-${dayKey}`, type:"finale", settingKey:"airingReminders", category:"anime",
+            title: `${title} finale airs today`, description: `Episode ${episode} — the season finale — airs today.`,
+            timestamp: Date.now(), mediaId: item.id, mediaType:"anime", poster
+          });
+        }else{
+          addTimelineEntry({
+            id: `airing-today-${item.id}-${dayKey}`, type:"airing_today", settingKey:"airingReminders", category:"anime",
+            title: `${title} airs today`, description: `Episode ${episode} airs today.`,
+            timestamp: Date.now(), mediaId: item.id, mediaType:"anime", poster
+          });
+        }
+      }
+      if(notifSettings.releaseCountdown){
+        const msUntil = airingAt - Date.now();
+        if(msUntil > 0 && msUntil <= 3600000){
+          addTimelineEntry({
+            id: `soon-${item.id}-${episode}`, type:"airing_soon", settingKey:"releaseCountdown", category:"anime",
+            title: `${title} airs in under an hour`, description: `Episode ${episode} releases soon.`,
+            timestamp: Date.now(), mediaId: item.id, mediaType:"anime", poster
+          });
+        }
+      }
+    });
+  }
+
+  // Marker position along the release timeline's track: how far through the
+  // (assumed weekly) wait since the last episode we are right now.
+  function computeReleaseProgressPct(nextAiringAtMs){
+    const cadenceMs = 7 * 86400000;
+    const lastAiredApprox = nextAiringAtMs - cadenceMs;
+    const pct = ((Date.now() - lastAiredApprox) / cadenceMs) * 100;
+    return Math.max(2, Math.min(98, pct));
+  }
+
+  const MOOD_LIST = [
+    { key:"loved", emoji:"😍", label:"Loved it" },
+    { key:"happy", emoji:"🙂", label:"Happy" },
+    { key:"neutral", emoji:"😐", label:"Neutral" },
+    { key:"sad", emoji:"😢", label:"Sad" },
+    { key:"angry", emoji:"😡", label:"Angry" },
+    { key:"mindblown", emoji:"🤯", label:"Mind blown" }
+  ];
+
+  function daysBetween(startStr, endStr){
+    if(!startStr || !endStr) return null;
+    const diff = Math.round((new Date(endStr + "T00:00:00") - new Date(startStr + "T00:00:00")) / 86400000);
+    return diff >= 0 ? diff : null;
+  }
+
+  // One-time smart default for the Journal's Started/Finished fields, drawn
+  // from the per-episode watch history the app already keeps (bumpProgress /
+  // setProgressToEpisode) — so returning users see dates the app already
+  // remembered instead of a blank form. Only used to seed empty fields once;
+  // after that the user's own edits (including clearing a date) stick.
+  function deriveHistoryDates(item){
+    const stamps = (item.history || []).map(h => h.watchedAt).filter(Boolean).sort();
+    if(!stamps.length) return { start:null, end:null };
+    return { start: stamps[0].slice(0,10), end: stamps[stamps.length-1].slice(0,10) };
+  }
+
   // ---------- search ----------
   let searchAbort = null;
   async function doSearch(term){
     const resultsEl = $("#results");
     if(term.trim().length < 2){ resultsEl.innerHTML = ""; return; }
-    resultsEl.innerHTML = `<div class="hint">Searching…</div>`;
+    resultsEl.innerHTML = loadingHtml("Searching");
     if(searchAbort) searchAbort.aborted = true;
     const token = { aborted:false }; searchAbort = token;
     try{
@@ -789,7 +1775,7 @@
   function removeItem(id, type){ list = list.filter(x => !(x.id === id && x.type === type)); saveList(); }
 
   function bumpProgress(item, delta){
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const cap = capFor(item);
     const prev = item.progress;
     let next = item.progress + delta;
     if(next < 0) next = 0;
@@ -813,7 +1799,7 @@
   // everything up to and including it watched); false rewinds progress to
   // just before epNumber (unmarking it and anything after).
   function setProgressToEpisode(item, epNumber, markWatched){
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const cap = capFor(item);
     let target = markWatched ? epNumber : epNumber - 1;
     if(cap) target = Math.min(target, cap);
     target = Math.max(0, target);
@@ -840,10 +1826,12 @@
       if(!ids.length) return;
       const data = await anilistQuery(REFRESH_QUERY, { ids });
       const byId = {}; data.Page.media.forEach(m => byId[m.id] = m);
-      const newlyAvailable = [];
+      const newEpisodeEvents = [];
+      const newChapterEvents = [];
       list.forEach(item => {
         const m = byId[item.id]; if(!m) return;
         const before = availableCount(item);
+        const chaptersBefore = item.totalChapters;
         item.mediaStatus = m.status;
         item.totalEpisodes = m.episodes || item.totalEpisodes;
         item.totalChapters = m.chapters || item.totalChapters;
@@ -864,17 +1852,52 @@
         item.updatedAt = Date.now();
         const after = availableCount(item);
         if(before !== null && after !== null && after > before && item.progress < after){
-          newlyAvailable.push(item.english || item.romaji);
+          newEpisodeEvents.push({ item, before, after });
           item.lastNewEpisodeDetectedAt = new Date().toISOString();
+        }
+        // AniList has no "newly released chapter" signal the way it does
+        // nextAiringEpisode for anime — but totalChapters climbing between
+        // refreshes for a still-RELEASING title is a real, reliable proxy
+        // for "a new chapter now exists," reusing data already being
+        // fetched here rather than a separate request.
+        if(item.type === "reading" && item.mediaStatus === "RELEASING" && chaptersBefore && item.totalChapters > chaptersBefore){
+          newChapterEvents.push({ item, before: chaptersBefore, after: item.totalChapters });
         }
       });
       saveList(); render();
-      if(newlyAvailable.length) notifyNewEpisodes(newlyAvailable);
+      newEpisodeEvents.forEach(e => logNewEpisode(e.item, e.before, e.after));
+      newChapterEvents.forEach(e => logNewChapter(e.item, e.before, e.after));
     }catch(e){ console.warn("AniList refresh failed", e); }
     finally{ refreshing = false; }
   }
+  function logNewEpisode(item, before, after){
+    if(!notifSettings.newEpisode) return;
+    const title = item.english || item.romaji;
+    const range = (after - before > 1) ? `Episodes ${before + 1}–${after}` : `Episode ${after}`;
+    addTimelineEntry({
+      id: `ep-${item.id}-${after}`, type:"episode_released", settingKey:"newEpisode", category:"anime",
+      title: `${title} — ${range} released`, description: `Ready to watch now.`,
+      timestamp: Date.now(), mediaId: item.id, mediaType: "anime", poster: item.customCover || item.cover || null
+    });
+  }
+  function logNewChapter(item, before, after){
+    if(!notifSettings.newChapter) return;
+    const title = item.english || item.romaji;
+    const kind = originLabel(item.countryOfOrigin, item.format).toLowerCase();
+    const range = (after - before > 1) ? `Chapters ${before + 1}–${after}` : `Chapter ${after}`;
+    addTimelineEntry({
+      id: `ch-${item.id}-${after}`, type:"chapter_released", settingKey:"newChapter", category:"reading",
+      title: `${title} — ${range} released`, description: `New ${kind} content is ready to read.`,
+      timestamp: Date.now(), mediaId: item.id, mediaType: "reading", poster: item.customCover || item.cover || null
+    });
+  }
 
   // ---------- rendering ----------
+  // The "total" cap for an item's progress — episodes for anime, chapters
+  // for reading. Repeated identically across many render functions before
+  // being pulled out here.
+  function capFor(item){ return item.type === "anime" ? item.totalEpisodes : item.totalChapters; }
+
   // How many episodes/chapters currently exist for the user to watch/read,
   // based on what's aired (for anime) or the known total (for finished
   // manga). Null means we don't know yet.
@@ -882,7 +1905,7 @@
     const nae = item.nextAiringEpisode;
     if(nae && typeof nae.episode === "number") return nae.episode - 1;
     if(item.mediaStatus === "FINISHED"){
-      const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+      const cap = capFor(item);
       return cap || null;
     }
     return null;
@@ -931,6 +1954,22 @@
     }));
   }
 
+  // Swipe-reveal icons: line-drawing animated SVGs (paths use pathLength="1"
+  // so the stroke-dashoffset draw trick works regardless of actual path
+  // geometry). Anime draws a screen + checkmark; reading draws an open book
+  // whose right page then physically flips over via the .page-flip group —
+  // see the .swipe-icon / .page-flip / @keyframes pageTurn CSS.
+  const SWIPE_ICON_ANIME = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <rect class="draw draw-1" x="3" y="5" width="18" height="12" rx="2" pathLength="1"/>
+    <path class="draw draw-2" d="M8 20h8" pathLength="1"/>
+    <path class="draw draw-3" d="m8 11 2.5 2.5L16 8" pathLength="1"/>
+  </svg>`;
+  const SWIPE_ICON_READING = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path class="draw draw-1" d="M12 6.5c-2.3-1.3-5-1.3-8 0v12.5c3-1.3 5.7-1.3 8 0" pathLength="1"/>
+    <g class="page-flip"><path class="draw draw-2" d="M12 6.5c2.3-1.3 5-1.3 8 0v12.5c-3-1.3-5.7-1.3-8 0" pathLength="1"/></g>
+    <path class="draw draw-3" d="M12 6.5v12.5" pathLength="1"/>
+  </svg>`;
+
   // Builds one card DOM element. Shared by the flat status-tab lists and
   // the Home feed (Watch Next / Haven't Watched For A While / Watched
   // History), so all three look and behave identically.
@@ -940,7 +1979,7 @@
   // opts.fresh: highlight as a newly-released episode/chapter.
   function buildCard(item, opts={}){
     const title = item.english || item.romaji;
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const cap = capFor(item);
     const unitPlural = item.type === "anime" ? "episodes" : "chapters";
 
     let epBig, epSub;
@@ -965,19 +2004,26 @@
 
     const badges = opts.historical ? [] : computeBadges(item);
     const dotColor = STATUS_COLOR[item.status] || "fg-faint";
+    const progressPct = (cap && !opts.historical)
+      ? (item.status === "completed" ? 100 : Math.min(100, Math.round((item.progress / cap) * 100)))
+      : null;
     const card = document.createElement("div");
     card.className = "card" + (opts.historical ? " feed-history" : "") + (opts.fresh ? " card-fresh" : "");
     card.innerHTML = `
-      <div class="poster-wrap"><img class="poster" src="${item.customCover || item.cover || ""}" alt="" loading="lazy" /></div>
-      <span class="status-dot" style="background:var(--${dotColor})"></span>
-      <div class="content">
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          <div class="title-pill" data-act="showdetail"><span>${escapeHtml(title)}</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
-          ${item.favorite ? '<span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span>' : ''}
+      ${!opts.historical ? `<div class="swipe-action"><div class="swipe-icon">${item.type === "anime" ? SWIPE_ICON_ANIME : SWIPE_ICON_READING}</div><span>${item.type === "anime" ? "Watched" : "Read"}</span></div>` : ''}
+      <div class="swipe-track">
+        <div class="poster-wrap"><img class="poster" src="${item.customCover || item.cover || ""}" alt="" loading="lazy" /></div>
+        <span class="status-dot" style="background:var(--${dotColor})"></span>
+        <div class="content">
+          <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+            <div class="title-pill" data-act="showdetail"><span>${escapeHtml(title)}</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+            ${item.favorite ? `<span class="star">${STAR_SVG}</span>` : ''}
+          </div>
+          <div class="ep-big">${epBig}</div>
+          <div class="ep-sub">${escapeHtml(epSub)}</div>
+          ${progressPct !== null ? `<div class="card-progress${progressPct >= 100 ? ' complete' : ''}"><div style="width:${progressPct}%"></div></div>` : ''}
+          <div class="badges">${badges.map(b => `<span class="badge ${b.cls}">${b.label}</span>`).join('')}</div>
         </div>
-        <div class="ep-big">${epBig}</div>
-        <div class="ep-sub">${escapeHtml(epSub)}</div>
-        <div class="badges">${badges.map(b => `<span class="badge ${b.cls}">${b.label}</span>`).join('')}</div>
       </div>
       <button class="tick ${opts.historical ? 'tick-done' : ''}" data-act="tick" aria-label="Mark next ${item.type === 'anime' ? 'episode' : 'chapter'} watched" ${opts.historical ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
     if(!opts.historical){
@@ -994,8 +2040,177 @@
     const epNumberForDetail = opts.historical
       ? Math.max(1, item.progress)
       : (item.status === "completed" ? (cap || item.progress || 1) : item.progress + 1);
-    card.addEventListener("click", () => openEpisodeDetail(item, epNumberForDetail));
+
+    let suppressClick = false;
+    if(!opts.historical){
+      const track = card.querySelector('.swipe-track');
+      const actionLayer = card.querySelector('.swipe-action');
+      const SWIPE_TRIGGER = 90;
+      const SWIPE_MAX = 130;
+      const EASE_OUT = "cubic-bezier(.22,1,.36,1)";
+      let startX = null, startY = null, dragging = false, dragX = 0, pointerId = null, armed = false, rafId = null;
+
+      function queueTransform(){
+        if(rafId !== null) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          track.style.transform = `translateX(${dragX}px)`;
+        });
+      }
+      function setArmed(next){
+        if(next === armed) return;
+        armed = next;
+        actionLayer.classList.toggle("armed", armed);
+        if(armed && navigator.vibrate) navigator.vibrate(8);
+      }
+
+      card.addEventListener("pointerdown", (e) => {
+        if(e.pointerType === "mouse" && e.button !== 0) return;
+        startX = e.clientX; startY = e.clientY; dragging = false; dragX = 0; pointerId = e.pointerId;
+      });
+      card.addEventListener("pointermove", (e) => {
+        if(startX === null || e.pointerId !== pointerId) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if(!dragging){
+          if(Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+          if(Math.abs(dy) > Math.abs(dx)){ startX = null; return; }
+          dragging = true;
+          track.style.transition = "none";
+          card.setPointerCapture(pointerId);
+        }
+        const raw = Math.max(0, dx);
+        // rubber-band past the trigger point instead of a hard stop, so the
+        // drag keeps giving a little feedback even once the swipe is armed
+        dragX = Math.min(raw <= SWIPE_TRIGGER ? raw : SWIPE_TRIGGER + (raw - SWIPE_TRIGGER) * 0.3, SWIPE_MAX);
+        setArmed(raw >= SWIPE_TRIGGER);
+        queueTransform();
+        e.preventDefault();
+      });
+      const endDrag = () => {
+        if(!dragging){ startX = null; return; }
+        if(rafId !== null){ cancelAnimationFrame(rafId); rafId = null; }
+        const committed = armed;
+        setArmed(false);
+        if(committed){
+          suppressClick = true;
+          track.style.transition = `transform .22s ${EASE_OUT}`;
+          track.style.transform = `translateX(${SWIPE_MAX}px)`;
+          setTimeout(() => { bumpProgress(item, 1); render(); }, 140);
+        }else{
+          track.style.transition = `transform .28s ${EASE_OUT}`;
+          track.style.transform = "translateX(0)";
+        }
+        dragging = false; startX = null; dragX = 0;
+      };
+      card.addEventListener("pointerup", endDrag);
+      card.addEventListener("pointercancel", endDrag);
+    }
+
+    card.addEventListener("click", () => {
+      if(suppressClick){ suppressClick = false; return; }
+      openEpisodeDetail(item, epNumberForDetail);
+    });
     return card;
+  }
+
+  // ---------- Home dashboard: calendar widgets ----------
+  // Both widgets read from the full combined list (anime + reading), not
+  // just the currently-selected mode — a release calendar describing only
+  // half your library on the Reading tab would be a worse dashboard than
+  // one that's simply always complete.
+  function buildCalRow(entry){
+    const item = entry.item;
+    return `<div class="cal-row" data-id="${item.id}" data-type="anime">
+      <img src="${item.customCover || item.cover || ''}" alt="" loading="lazy" />
+      <div><div class="cr-title">${escapeHtml(item.english || item.romaji)}</div><div class="cr-meta">Episode ${entry.episode}</div></div>
+      <div class="cr-time">${new Date(entry.airingAt).toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" })}</div>
+    </div>`;
+  }
+  function buildCalRowsGroupedByDay(entries){
+    let html = "", lastDayKey = null;
+    entries.forEach(e => {
+      const dayKey = startOfDay(e.airingAt);
+      if(dayKey !== lastDayKey){
+        html += `<div class="cal-day-label">${new Date(e.airingAt).toLocaleDateString(undefined, { weekday:"long", month:"short", day:"numeric" })}</div>`;
+        lastDayKey = dayKey;
+      }
+      html += buildCalRow(e);
+    });
+    return html;
+  }
+  function wireCalRowClicks(container){
+    container.querySelectorAll(".cal-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const item = itemById(Number(row.dataset.id), row.dataset.type);
+        if(item) openShowDetail(item);
+      });
+    });
+  }
+
+  function buildTodaysCalendarBlock(allItems){
+    const wrap = document.createElement("div");
+    wrap.className = "feed-section";
+    const animeItems = allItems.filter(i => i.type === "anime");
+    const todayEpisodes = getUpcomingEpisodesInRange(animeItems, startOfDay(Date.now()), endOfDay(Date.now()));
+    // AniList has no equivalent of nextAiringEpisode for manga chapters, so
+    // "today" can't be determined for reading — shown instead as an honest
+    // best-effort: titles you're actively reading that are still ongoing,
+    // clearly labeled rather than implying a real release date we don't have.
+    const mangaOngoing = allItems.filter(i => i.type === "reading" && i.status === "reading" && i.mediaStatus === "RELEASING");
+    const mangaRowsHtml = mangaOngoing.map(item => `
+      <div class="cal-row" data-id="${item.id}" data-type="reading">
+        <img src="${item.customCover || item.cover || ''}" alt="" loading="lazy" />
+        <div><div class="cr-title">${escapeHtml(item.english || item.romaji)}</div><div class="cr-meta">Ongoing</div></div>
+      </div>`).join("");
+
+    wrap.innerHTML = `
+      <div class="cal-widget">
+        <div class="cw-title">Today's Calendar</div>
+        <div class="cal-sub">Shows releasing today</div>
+        ${todayEpisodes.length ? todayEpisodes.map(buildCalRow).join("") : '<div class="hint">Nothing airing today.</div>'}
+        <div class="cal-sub">Manga chapters releasing today</div>
+        <div class="hint" style="padding-top:0;">AniList doesn't publish chapter release dates — showing what you're actively reading that's still ongoing instead.</div>
+        ${mangaOngoing.length ? mangaRowsHtml : '<div class="hint">Nothing ongoing right now.</div>'}
+      </div>`;
+    wireCalRowClicks(wrap);
+    return wrap;
+  }
+
+  let calendarViewTab = "tomorrow";
+  function renderCalendarViewBody(bodyEl, animeItems){
+    if(calendarViewTab === "tomorrow"){
+      const tomorrow = Date.now() + 86400000;
+      const eps = getUpcomingEpisodesInRange(animeItems, startOfDay(tomorrow), endOfDay(tomorrow));
+      bodyEl.innerHTML = eps.length ? eps.map(buildCalRow).join("") : `<div class="hint">Nothing airing tomorrow.</div>`;
+    }else{
+      const eps = getUpcomingEpisodesInRange(animeItems, startOfDay(Date.now()), endOfDay(Date.now() + 6 * 86400000));
+      bodyEl.innerHTML = eps.length ? buildCalRowsGroupedByDay(eps) : `<div class="hint">Nothing airing in the next 7 days.</div>`;
+    }
+    wireCalRowClicks(bodyEl);
+  }
+  function buildReleaseCalendarBlock(allItems){
+    const wrap = document.createElement("div");
+    wrap.className = "feed-section";
+    const animeItems = allItems.filter(i => i.type === "anime");
+    wrap.innerHTML = `
+      <div class="cal-widget">
+        <div class="cw-title">Release Calendar</div>
+        <div class="tabs cal-tabs" style="padding:10px 0 4px;">
+          <button class="tab${calendarViewTab === "tomorrow" ? " active" : ""}" data-cv="tomorrow">Tomorrow</button>
+          <button class="tab${calendarViewTab === "week" ? " active" : ""}" data-cv="week">Upcoming Week</button>
+        </div>
+        <div class="cal-view-body"></div>
+      </div>`;
+    const tabsEl = wrap.querySelector(".cal-tabs");
+    const bodyEl = wrap.querySelector(".cal-view-body");
+    tabsEl.querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => {
+      calendarViewTab = btn.dataset.cv;
+      tabsEl.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === btn));
+      renderCalendarViewBody(bodyEl, animeItems);
+    }));
+    renderCalendarViewBody(bodyEl, animeItems);
+    return wrap;
   }
 
   // The Home feed: mirrors TV Time's own vertical scroll layout —
@@ -1010,12 +2225,6 @@
     const active = activeItems.filter(x => x.status === activeStatus);
     const RECENT_DAYS = 14;
     const FRESH_DAYS = 4;
-
-    function lastWatchedAt(item){
-      if(!item.history || !item.history.length) return null;
-      return item.history.reduce((max,h) => h.watchedAt && (!max || h.watchedAt > max) ? h.watchedAt : max, null);
-    }
-    function daysSince(dateStr){ return (Date.now() - new Date(dateStr).getTime()) / 86400000; }
 
     const watchNext = [];
     const stale = [];
@@ -1048,8 +2257,19 @@
 
     listEl.innerHTML = "";
 
+    // Calendar widgets read the full library, not just what's "active" in
+    // the current mode, so they still render even when this tab's active
+    // list below is empty — positioned right after "Watch Next" either way,
+    // matching the Continue Watching → Today's Calendar dashboard order.
     if(!active.length){
-      listEl.innerHTML = `<div class="empty">Nothing actively ${mode === "anime" ? "watching" : "reading"} right now.<br/>Tap <b>+</b> to search and add ${mode === "anime" ? "an anime" : "a manga/manhwa/manhua"}, or check your other status tabs.</div>`;
+      listEl.appendChild(buildTodaysCalendarBlock(list));
+      listEl.appendChild(buildReleaseCalendarBlock(list));
+      listEl.appendChild(buildNotifWidgetBlock());
+      listEl.appendChild(buildWisdomWidgetBlock());
+      const emptyDiv = document.createElement("div");
+      emptyDiv.className = "empty";
+      emptyDiv.innerHTML = `Nothing actively ${mode === "anime" ? "watching" : "reading"} right now.<br/>Tap <b>+</b> to search and add ${mode === "anime" ? "an anime" : "a manga/manhwa/manhua"}, or check your other status tabs.`;
+      listEl.appendChild(emptyDiv);
       return;
     }
 
@@ -1074,6 +2294,11 @@
     }
     listEl.appendChild(nextBlock);
 
+    listEl.appendChild(buildTodaysCalendarBlock(list));
+    listEl.appendChild(buildReleaseCalendarBlock(list));
+    listEl.appendChild(buildNotifWidgetBlock());
+    listEl.appendChild(buildWisdomWidgetBlock());
+
     if(stale.length){
       const staleBlock = document.createElement("div");
       staleBlock.className = "feed-section";
@@ -1095,6 +2320,19 @@
     }
   }
 
+  // One handcrafted line per status instead of a single generic "Nothing in
+  // this tab" for all of them — an empty Dropped tab and an empty Completed
+  // tab mean very different things, and should read that way.
+  const STATUS_EMPTY_COPY = {
+    watching: "Nothing here yet.<br/>Pick something worth remembering.",
+    reading: "Nothing here yet.<br/>Pick something worth remembering.",
+    planned: "Waiting for the right moment.",
+    completed: "Every masterpiece starts somewhere.",
+    onhold: "Paused, not forgotten.",
+    dropped: "Not every story deserves your time.",
+    upcoming: "Nothing on the horizon yet."
+  };
+
   function render(){
     const listEl = $("#list");
     const items = list.filter(x => x.type === mode);
@@ -1113,7 +2351,10 @@
     if(currentFilter === "upcoming") filtered = items.filter(x => x.nextAiringEpisode && x.nextAiringEpisode.airingAt * 1000 > Date.now());
     else filtered = items.filter(x => x.status === currentFilter);
 
-    if(!filtered.length){ listEl.innerHTML = `<div class="empty">Nothing in this tab.</div>`; return; }
+    if(!filtered.length){
+      listEl.innerHTML = `<div class="empty">${STATUS_EMPTY_COPY[currentFilter] || "Nothing in this tab."}</div>`;
+      return;
+    }
 
     filtered.sort((a,b) => {
       const aUp = a.nextAiringEpisode ? a.nextAiringEpisode.airingAt : Infinity;
@@ -1126,9 +2367,7 @@
   }
 
   // ---------- bottom tab bar ----------
-  let activeTab = "anime";
   function switchTab(tab){
-    activeTab = tab;
     $$(".tab-item").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
     $$(".tabpage").forEach(p => p.classList.remove("active"));
     const tabsRow = $("#tabs");
@@ -1145,6 +2384,13 @@
       $("#page-discover").classList.add("active");
       tabsRow.style.display = "none";
       fab.style.display = "none";
+      $("#discoverSearchInput").value = "";
+      $("#discoverTabs").style.display = "";
+      $("#discoverTabs").querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.d === discoverTab));
+      $("#genrePicker").style.display = discoverTab === "genre" ? "flex" : "none";
+      if(discoverTab === "genre"){
+        $("#genrePicker").querySelectorAll(".genre-pick").forEach(b => b.classList.toggle("active", b.textContent === discoverGenre));
+      }
       runDiscover();
     }else if(tab === "more"){
       $("#page-more").classList.add("active");
@@ -1223,6 +2469,7 @@
 
     const tickBtn = $("#epTickBtn");
     tickBtn.classList.toggle("tick-done", watched);
+    tickBtn.setAttribute("aria-label", `Mark this ${item.type === "anime" ? "episode" : "chapter"} ${watched ? "unwatched" : "watched"}`);
     tickBtn.onclick = () => {
       setProgressToEpisode(item, epNumber, !watched);
       render();
@@ -1248,6 +2495,7 @@
   const showDetailOverlay = $("#showDetailOverlay");
   let currentShowItem = null;
   let showDetailTab = "about";
+  let showDetailCountdownTimer = null;
 
   function openShowDetail(item){
     currentShowItem = item;
@@ -1255,15 +2503,54 @@
     $("#showDetailTabs").querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.sdt === "about"));
     $("#showDetailAbout").style.display = "";
     $("#showDetailEpisodes").style.display = "none";
+    $("#showDetailJournal").style.display = "none";
     $("#showDetailTitle").textContent = item.english || item.romaji;
+    $("#showDetailNative").style.display = "none";
+    $("#showActionMenu").classList.remove("open");
     const hero = item.bannerImage || item.customCover || item.cover || "";
     $("#showHero").style.backgroundImage = hero ? `url('${hero}')` : "none";
+    const poster = $("#showHeroPoster");
+    const posterSrc = item.customCover || item.cover || "";
+    if(posterSrc){ poster.src = posterSrc; poster.style.display = ""; } else { poster.style.display = "none"; }
     renderShowDetailAbout(item);
     showDetailOverlay.classList.add("open");
   }
-  $("#closeShowDetail").addEventListener("click", () => { showDetailOverlay.classList.remove("open"); render(); });
-  $("#showMenuBtn").addEventListener("click", () => {
+  function closeShowDetail(){
+    showDetailOverlay.classList.remove("open");
+    $("#showActionMenu").classList.remove("open");
+    if(showDetailCountdownTimer){ clearInterval(showDetailCountdownTimer); showDetailCountdownTimer = null; }
+    render();
+  }
+  $("#closeShowDetail").addEventListener("click", closeShowDetail);
+
+  // "..." opens a small action menu (Edit Tracking / Remove from List)
+  // instead of jumping straight into the edit sheet — removal previously
+  // only lived at the very bottom of that sheet, past season/progress/
+  // rating/notes/cover fields, which made it hard to find for something
+  // this important.
+  $("#showMenuBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    $("#showActionMenu").classList.toggle("open");
+  });
+  document.addEventListener("click", (e) => {
+    const menu = $("#showActionMenu");
+    if(menu.classList.contains("open") && !menu.contains(e.target) && e.target.id !== "showMenuBtn"){
+      menu.classList.remove("open");
+    }
+  });
+  $("#showActionEdit").addEventListener("click", () => {
+    $("#showActionMenu").classList.remove("open");
     if(currentShowItem) openDetail(currentShowItem);
+  });
+  $("#showActionRemove").addEventListener("click", () => {
+    $("#showActionMenu").classList.remove("open");
+    if(!currentShowItem) return;
+    const title = currentShowItem.english || currentShowItem.romaji;
+    if(confirm(`Remove "${title}" from your list?`)){
+      removeItem(currentShowItem.id, currentShowItem.type);
+      closeShowDetail();
+      toast(`Removed "${title}"`);
+    }
   });
 
   $("#showDetailTabs").querySelectorAll(".tab").forEach(btn => btn.addEventListener("click", () => {
@@ -1272,52 +2559,198 @@
     showDetailTab = btn.dataset.sdt;
     $("#showDetailAbout").style.display = showDetailTab === "about" ? "" : "none";
     $("#showDetailEpisodes").style.display = showDetailTab === "episodes" ? "" : "none";
+    $("#showDetailJournal").style.display = showDetailTab === "journal" ? "" : "none";
     if(showDetailTab === "episodes") renderShowDetailEpisodes(currentShowItem);
+    if(showDetailTab === "journal") renderShowDetailJournal(currentShowItem);
   }));
+
+  // Key/value rows for the top section. Only fields that are actually
+  // available render — no "—" placeholders — so the grid stays exactly as
+  // tall as the data warrants (Simplicity: avoid meaningless metrics).
+  function buildDetailMetaGrid(item){
+    const cap = capFor(item);
+    const extra = item.extra;
+    const rows = [];
+    if(extra && extra.studio) rows.push([item.type === "anime" ? "Studio" : "Publisher", extra.studio]);
+    if(extra && extra.creator) rows.push([item.type === "anime" ? "Director" : "Mangaka", extra.creator]);
+    const lang = originLanguageLabel(item.countryOfOrigin);
+    if(lang) rows.push(["Original language", lang]);
+    const statusLabel = mediaStatusLabel(item.mediaStatus);
+    if(statusLabel) rows.push(["Status", statusLabel]);
+    const years = releaseYearsLabel(item);
+    if(years) rows.push(["Release years", years]);
+    // Labeled "tracked" rather than plain "Season" — this is AniTrack's own
+    // per-entry season counter (set in the edit sheet, used to merge
+    // multi-season progress), which can differ from a season number AniList
+    // already bakes into the title itself (e.g. "…Season 3").
+    if(item.type === "anime" && item.season) rows.push(["Season (tracked)", String(item.season)]);
+    if(cap) rows.push([item.type === "anime" ? "Episodes" : "Chapters", String(cap)]);
+    if(item.type === "anime" && item.duration) rows.push(["Avg. runtime", `${item.duration} min`]);
+    if(!rows.length) return "";
+    return `<div class="detail-meta-grid">${rows.map(([label, value]) => `
+      <div class="detail-meta-item"><div class="dmi-label">${escapeHtml(label)}</div><div class="dmi-value">${escapeHtml(value)}</div></div>
+    `).join("")}</div>`;
+  }
+
+  // Weekly schedule + live countdown, built from the same nextAiringEpisode
+  // data already used for badges elsewhere — no extra request needed.
+  // Release Timeline: episode number + a thin track whose marker position
+  // shows how far through the (assumed weekly) wait we are, plus a
+  // day/hour countdown that keeps itself current — see startAiringCountdown.
+  function buildReleaseTimeline(item){
+    if(item.type !== "anime" || !item.nextAiringEpisode) return "";
+    const airingAtMs = item.nextAiringEpisode.airingAt * 1000;
+    const d = new Date(airingAtMs);
+    const weekday = d.toLocaleDateString(undefined, { weekday:"long" });
+    const time = d.toLocaleTimeString(undefined, { hour:"numeric", minute:"2-digit" });
+    const pct = computeReleaseProgressPct(airingAtMs);
+    const dh = daysHoursUntil(airingAtMs);
+    return `<div class="release-timeline" id="releaseTimeline" data-airing-at="${airingAtMs}">
+      <div class="rt-episode">Episode ${item.nextAiringEpisode.episode}<span class="rt-sched">Airs ${weekday}s, ${time}</span></div>
+      <div class="rt-track"><div class="rt-fill" style="width:${pct}%"></div><div class="rt-marker" style="left:${pct}%"></div></div>
+      <div class="rt-countdown-label">Releases in</div>
+      <div class="rt-countdown-numbers">
+        <span class="hn"><b id="rtDays">${dh.days}</b>${dh.days === 1 ? "Day" : "Days"}</span>
+        <span class="hn"><b id="rtHours">${dh.hours}</b>${dh.hours === 1 ? "Hour" : "Hours"}</span>
+      </div>
+    </div>`;
+  }
+  function startAiringCountdown(){
+    if(showDetailCountdownTimer){ clearInterval(showDetailCountdownTimer); showDetailCountdownTimer = null; }
+    const track = document.getElementById("releaseTimeline");
+    if(!track) return;
+    const airingAtMs = Number(track.dataset.airingAt);
+    showDetailCountdownTimer = setInterval(() => {
+      const daysEl = document.getElementById("rtDays");
+      const hoursEl = document.getElementById("rtHours");
+      if(!daysEl || !hoursEl){ clearInterval(showDetailCountdownTimer); showDetailCountdownTimer = null; return; }
+      const dh = daysHoursUntil(airingAtMs);
+      daysEl.textContent = dh.days;
+      hoursEl.textContent = dh.hours;
+      const marker = track.querySelector(".rt-marker");
+      const fill = track.querySelector(".rt-fill");
+      const pct = computeReleaseProgressPct(airingAtMs);
+      if(marker) marker.style.left = pct + "%";
+      if(fill) fill.style.width = pct + "%";
+    }, 60000);
+  }
+
+  function buildRecCard(rec){
+    const title = rec.title.english || rec.title.romaji;
+    const kind = rec.type === "ANIME" ? "anime" : "manga";
+    return `<a class="rec-card" href="https://anilist.co/${kind}/${rec.id}" target="_blank" rel="noopener">
+      <img src="${rec.coverImage.medium}" alt="" loading="lazy" />
+      <div class="rc-title">${escapeHtml(title)}</div>
+    </a>`;
+  }
+
+  // "Discover More": AniList's community recommendations split into Similar
+  // Anime / Similar Manga, plus this title's own genres re-shown as jump
+  // links into the Discover tab's genre browser — reusing that existing
+  // feature instead of building a second genre-browsing UI here.
+  function buildDiscoverMoreBody(item){
+    const extra = item.extra;
+    let html = "";
+    if(extra && extra.recommendations && extra.recommendations.length){
+      const animeRecs = extra.recommendations.filter(r => r.type === "ANIME").slice(0, 8);
+      const mangaRecs = extra.recommendations.filter(r => r.type === "MANGA").slice(0, 8);
+      if(animeRecs.length) html += `<div class="rec-group-label">Similar Anime</div><div class="rec-row">${animeRecs.map(buildRecCard).join("")}</div>`;
+      if(mangaRecs.length) html += `<div class="rec-group-label"${animeRecs.length ? ' style="margin-top:14px;"' : ''}>Similar Manga</div><div class="rec-row">${mangaRecs.map(buildRecCard).join("")}</div>`;
+    }
+    if(!html) html = `<div class="hint">No recommendations from AniList yet for this title.</div>`;
+    const jumpGenres = (item.genres || []).filter(g => GENRE_LIST.includes(g));
+    if(jumpGenres.length){
+      html += `<div class="rec-group-label" style="margin-top:14px;">Similar Genres</div>
+        <div class="genre-jump-row">${jumpGenres.map(g => `<button class="genre-pick" data-jump-genre="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join("")}</div>`;
+    }
+    return html;
+  }
+
+  // Closes Show Detail and lands on Discover's genre browser pre-filtered
+  // to the tapped genre, reusing the existing Discover tab/genre state
+  // instead of a second genre UI.
+  function jumpToGenre(genre){
+    closeShowDetail();
+    discoverTab = "genre";
+    discoverGenre = genre;
+    switchTab("discover");
+  }
 
   async function renderShowDetailAbout(item){
     const el = $("#showDetailAbout");
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
-    const yearLine = [item.format, item.mediaStatus === "RELEASING" ? "Releasing" : item.mediaStatus === "FINISHED" ? "Finished" : item.mediaStatus, (item.genres||[]).slice(0,3).join(", ")].filter(Boolean).join(" · ");
-
-    let metaIcons = "";
-    if(item.type === "anime" && item.nextAiringEpisode){
-      const d = new Date(item.nextAiringEpisode.airingAt * 1000);
-      metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg> ${d.toLocaleDateString(undefined,{weekday:"short"})} | ${d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</span>`;
-    }
-    if(item.duration) metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ${item.duration} min</span>`;
-    if(item.popularity) metaIcons += `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ${item.popularity.toLocaleString()} tracking on AniList</span>`;
+    const genreChips = (item.genres || []).map(g => `<span class="badge tag">${escapeHtml(g)}</span>`).join("");
 
     el.innerHTML = `
-      <div class="cast-row" id="castRow"><div class="hint">Loading cast…</div></div>
-      <div class="show-info-line">${escapeHtml(yearLine)}${cap ? " · " + cap + (item.type==="anime"?" episodes":" chapters") : ""}</div>
-      ${item.averageScore ? `<div class="show-score"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg> ${(item.averageScore/10).toFixed(1)}/10 on AniList</div>` : ""}
+      <div id="detailMetaGridWrap">${buildDetailMetaGrid(item)}</div>
       <div class="ep-description">${escapeHtml(item.description || "No synopsis available.")}</div>
+      ${genreChips ? `<div class="genre-chip-row">${genreChips}</div>` : ""}
+      ${item.averageScore ? `<div class="show-score">${STAR_SVG} ${(item.averageScore/10).toFixed(1)}/10 on AniList</div>
+      <div class="hint rating-note">AniList doesn't publish per-episode ratings — check the Episodes tab for your own watch history.</div>` : ""}
       ${item.trailer && item.trailer.site === "youtube" ? `
         <a class="trailer-btn" href="https://www.youtube.com/watch?v=${item.trailer.id}" target="_blank" rel="noopener">
           <span class="tplay"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="6 3 20 12 6 21 6 3"/></svg></span><span class="ttext">Watch trailer</span>
         </a>` : ""}
-      <div class="meta-icons-row">${metaIcons}</div>
+      ${buildReleaseTimeline(item)}
+
+      <details class="detail-section" open>
+        <summary>Characters<svg class="chev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="sec-body cast-row" id="castRow">${loadingHtml("Loading cast")}</div>
+      </details>
+
+      <details class="detail-section">
+        <summary>Discover More<svg class="chev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="sec-body" id="discoverMoreBody">${loadingHtml("Loading")}</div>
+      </details>
     `;
 
-    if(item.characters){
+    startAiringCountdown();
+    // Delegated once on the container so genre-jump buttons work whether
+    // they're present now or only appear after the extras fetch resolves.
+    el.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-jump-genre]");
+      if(btn) jumpToGenre(btn.dataset.jumpGenre);
+    });
+
+    if(item.characters && item.extra){
       renderCastRow(item.characters);
+      $("#discoverMoreBody").innerHTML = buildDiscoverMoreBody(item);
     }else if(navigator.onLine){
       try{
-        const data = await anilistQuery(CHARACTERS_QUERY, { id: item.id });
-        const edges = (data.Media && data.Media.characters && data.Media.characters.edges) || [];
+        const data = await anilistQuery(SHOW_EXTRA_QUERY, { id: item.id });
+        const media = data.Media || {};
+        const edges = (media.characters && media.characters.edges) || [];
         item.characters = edges.map(e => ({
           name: e.node.name.full,
           image: e.node.image.medium,
           va: (e.voiceActors && e.voiceActors[0]) ? e.voiceActors[0].name.full : null
         }));
+        item.extra = {
+          native: media.title && media.title.native || null,
+          startYear: media.startDate && media.startDate.year || null,
+          endYear: media.endDate && media.endDate.year || null,
+          studio: (media.studios && media.studios.nodes[0]) ? media.studios.nodes[0].name : null,
+          creator: pickCreator(media.staff, item.type),
+          recommendations: ((media.recommendations && media.recommendations.nodes) || [])
+            .filter(n => n.mediaRecommendation)
+            .map(n => ({
+              id: n.mediaRecommendation.id, type: n.mediaRecommendation.type,
+              title: n.mediaRecommendation.title, coverImage: n.mediaRecommendation.coverImage
+            }))
+        };
         saveList();
-        if(currentShowItem === item) renderCastRow(item.characters);
+        if(currentShowItem !== item) return;
+        renderCastRow(item.characters);
+        $("#detailMetaGridWrap").innerHTML = buildDetailMetaGrid(item);
+        if(item.extra.native){ $("#showDetailNative").textContent = item.extra.native; $("#showDetailNative").style.display = ""; }
+        $("#discoverMoreBody").innerHTML = buildDiscoverMoreBody(item);
       }catch(e){
-        if(currentShowItem === item) $("#castRow").innerHTML = `<div class="hint">Couldn't load cast.</div>`;
+        if(currentShowItem !== item) return;
+        $("#castRow").innerHTML = `<div class="hint">Couldn't load cast.</div>`;
+        $("#discoverMoreBody").innerHTML = `<div class="hint">Couldn't reach AniList. Check your connection.</div>`;
       }
     }else{
       $("#castRow").innerHTML = `<div class="hint">Connect to the internet to load cast info.</div>`;
+      $("#discoverMoreBody").innerHTML = `<div class="hint">Connect to the internet to load recommendations.</div>`;
     }
   }
 
@@ -1334,7 +2767,7 @@
 
   function renderShowDetailEpisodes(item){
     const el = $("#showDetailEpisodes");
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const cap = capFor(item);
     const total = Math.min(cap || Math.max(item.progress + 5, 24), 300);
     if(!total){ el.innerHTML = `<div class="hint">Episode count unknown for this title yet.</div>`; return; }
     el.innerHTML = "";
@@ -1346,7 +2779,7 @@
       row.innerHTML = `
         <span class="ernum">${item.type === "anime" ? "E" : "CH"}${n}</span>
         <span class="ertitle">${escapeHtml(knownTitle || (item.type === "anime" ? `Episode ${n}` : `Chapter ${n}`))}</span>
-        <button class="ertick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+        <button class="ertick" aria-label="Mark ${item.type === "anime" ? "episode" : "chapter"} ${n} ${watched ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
       row.querySelector(".ertick").addEventListener("click", (e) => {
         e.stopPropagation();
         setProgressToEpisode(item, n, !watched);
@@ -1361,10 +2794,152 @@
     }
   }
 
+  // AniTrack's signature feature: a private diary page per title, separate
+  // from tracking (progress/status live in the edit sheet and stay there).
+  // Personal Rating and Personal Notes are bound to the same item.rating /
+  // item.notes fields the edit sheet already uses — one underlying value,
+  // just a richer place to write it — rather than forking the data.
+  // Everything here is local-only; there is no network request in this
+  // function at all.
+  function renderShowDetailJournal(item){
+    const el = $("#showDetailJournal");
+
+    if(item.startedDate === undefined || item.finishedDate === undefined){
+      const derived = deriveHistoryDates(item);
+      if(item.startedDate === undefined) item.startedDate = derived.start;
+      if(item.finishedDate === undefined) item.finishedDate = (item.status === "completed") ? derived.end : null;
+      saveList();
+    }
+
+    const days = daysBetween(item.startedDate, item.finishedDate);
+    const verb = item.type === "anime" ? "watching" : "reading";
+
+    el.innerHTML = `
+      <div class="journal-intro">A private page for this title. Nothing here syncs anywhere or leaves your device.</div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Timeline</div>
+        <div class="journal-dates">
+          <div class="jd-item"><label class="jf-sub" for="jStarted">Started</label><input type="date" class="journal-input" id="jStarted" value="${item.startedDate || ''}" /></div>
+          <div class="jd-item"><label class="jf-sub" for="jFinished">Finished</label><input type="date" class="journal-input" id="jFinished" value="${item.finishedDate || ''}" /></div>
+        </div>
+        ${days !== null ? `<div class="badge tag" style="margin-top:10px; display:inline-block;">${days} day${days === 1 ? '' : 's'} ${verb}</div>` : ''}
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Your rating</div>
+        <div class="stars" id="jStars"></div>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Mood</div>
+        <div class="genre-chip-row" id="jMood"></div>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Favorite character</div>
+        <input type="text" class="journal-input" id="jFavChar" placeholder="Who stuck with you?" value="${escapeHtml(item.favoriteCharacter || '')}" list="jCastList" />
+        <datalist id="jCastList">${(item.characters || []).map(c => `<option value="${escapeHtml(c.name)}">`).join('')}</datalist>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Favorite scene</div>
+        <textarea class="notes" id="jFavScene" placeholder="The moment you won't forget…">${escapeHtml(item.favoriteScene || '')}</textarea>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Would you recommend it?</div>
+        <div class="status-grid" id="jRecommend">
+          <button class="status-pill" data-rec="yes">Yes</button>
+          <button class="status-pill" data-rec="no">No</button>
+        </div>
+      </div>
+
+      <div class="sheet-row">
+        <div class="sheet-label">Rewatch count</div>
+        <div class="stepper">
+          <button data-rw="-1" aria-label="Decrease rewatch count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+          <input type="number" id="jRewatch" value="${item.rewatchCount || 0}" min="0" />
+          <button data-rw="1" aria-label="Increase rewatch count"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+        </div>
+      </div>
+
+      ${item.status === "dropped" ? `
+      <div class="sheet-row">
+        <div class="sheet-label">Why I dropped it</div>
+        <textarea class="notes" id="jWhyDropped" placeholder="No shame — not every story is for you.">${escapeHtml(item.whyDropped || '')}</textarea>
+      </div>` : ''}
+
+      <div class="sheet-row">
+        <div class="sheet-label">Personal notes</div>
+        <textarea class="notes diary" id="jNotes" placeholder="What will you remember about this one?">${escapeHtml(item.notes || '')}</textarea>
+      </div>
+    `;
+
+    $("#jStarted").addEventListener("change", (e) => { item.startedDate = e.target.value || null; saveList(); renderShowDetailJournal(item); });
+    $("#jFinished").addEventListener("change", (e) => { item.finishedDate = e.target.value || null; saveList(); renderShowDetailJournal(item); });
+
+    const starsEl = $("#jStars");
+    for(let i = 1; i <= 10; i++){
+      const s = document.createElement("span");
+      s.innerHTML = STAR_SVG;
+      if(item.rating && i <= item.rating) s.classList.add("on");
+      s.addEventListener("click", () => { item.rating = (item.rating === i) ? null : i; saveList(); renderShowDetailJournal(item); });
+      starsEl.appendChild(s);
+    }
+
+    const moodEl = $("#jMood");
+    MOOD_LIST.forEach(m => {
+      const b = document.createElement("button");
+      b.className = "genre-pick mood-pick" + (item.mood === m.key ? " active" : "");
+      b.setAttribute("aria-pressed", item.mood === m.key ? "true" : "false");
+      b.innerHTML = `${m.emoji} ${escapeHtml(m.label)}`;
+      b.addEventListener("click", () => { item.mood = (item.mood === m.key) ? null : m.key; saveList(); renderShowDetailJournal(item); });
+      moodEl.appendChild(b);
+    });
+
+    $("#jFavChar").addEventListener("change", (e) => { item.favoriteCharacter = e.target.value; saveList(); });
+    let jSceneDebounce = null;
+    $("#jFavScene").addEventListener("input", (e) => {
+      clearTimeout(jSceneDebounce);
+      jSceneDebounce = setTimeout(() => { item.favoriteScene = e.target.value; saveList(); }, 400);
+    });
+
+    $("#jRecommend").querySelectorAll(".status-pill").forEach(btn => {
+      const val = btn.dataset.rec === "yes";
+      const isSel = item.wouldRecommend === val;
+      btn.classList.toggle("sel", isSel);
+      btn.setAttribute("aria-pressed", isSel ? "true" : "false");
+      btn.style.background = isSel ? (val ? "var(--status-green)" : "var(--status-red)") : "";
+      btn.addEventListener("click", () => {
+        item.wouldRecommend = (item.wouldRecommend === val) ? null : val;
+        saveList(); renderShowDetailJournal(item);
+      });
+    });
+
+    el.querySelector('[data-rw="-1"]').addEventListener("click", () => { item.rewatchCount = Math.max(0, (item.rewatchCount || 0) - 1); saveList(); renderShowDetailJournal(item); });
+    el.querySelector('[data-rw="1"]').addEventListener("click", () => { item.rewatchCount = (item.rewatchCount || 0) + 1; saveList(); renderShowDetailJournal(item); });
+    $("#jRewatch").addEventListener("change", (e) => { item.rewatchCount = Math.max(0, parseInt(e.target.value, 10) || 0); saveList(); });
+
+    if(item.status === "dropped"){
+      let whyDebounce = null;
+      $("#jWhyDropped").addEventListener("input", (e) => {
+        clearTimeout(whyDebounce);
+        whyDebounce = setTimeout(() => { item.whyDropped = e.target.value; saveList(); }, 400);
+      });
+    }
+
+    let jNotesDebounce = null;
+    $("#jNotes").addEventListener("input", (e) => {
+      clearTimeout(jNotesDebounce);
+      jNotesDebounce = setTimeout(() => { item.notes = e.target.value; saveList(); }, 400);
+    });
+  }
+
   const detailOverlay = $("#detailOverlay");
   function openDetail(item){
     $("#detailTitle").textContent = item.english || item.romaji;
-    const cap = item.type === "anime" ? item.totalEpisodes : item.totalChapters;
+    const cap = capFor(item);
     const unit = item.type === "anime" ? "episode" : "chapter";
     const body = $("#detailBody");
     body.innerHTML = `
@@ -1372,26 +2947,26 @@
       <div class="sheet-row">
         <div class="sheet-label">Season</div>
         <div class="stepper">
-          <button data-se="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+          <button data-se="-1" aria-label="Decrease season"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="seasonInput" value="${item.season || 1}" min="1" />
-          <button data-se="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+          <button data-se="1" aria-label="Increase season"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>` : ""}
       <div class="sheet-row">
         <div class="sheet-label">${unit}s watched${cap ? " / " + cap : ""}</div>
         <div class="stepper">
-          <button data-s="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+          <button data-s="-1" aria-label="Decrease ${unit}s watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="progInput" value="${item.progress}" min="0" ${cap ? `max="${cap}"` : ""} />
-          <button data-s="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+          <button data-s="1" aria-label="Increase ${unit}s watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>
       ${item.type === "reading" ? `
       <div class="sheet-row">
         <div class="sheet-label">Volume${item.totalVolumes ? " / " + item.totalVolumes : ""}</div>
         <div class="stepper">
-          <button data-v="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+          <button data-v="-1" aria-label="Decrease volume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
           <input type="number" id="volInput" value="${item.volumeProgress||0}" min="0" ${item.totalVolumes ? `max="${item.totalVolumes}"` : ""} />
-          <button data-v="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+          <button data-v="1" aria-label="Increase volume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
         </div>
       </div>` : ""}
       <div class="sheet-row">
@@ -1403,7 +2978,7 @@
         <div class="stars" id="starRow"></div>
       </div>
       <div class="sheet-row">
-        <button class="fav-toggle ${item.favorite ? "on" : ""}" id="favBtn"><span class="star"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span> ${item.favorite ? "Favorited" : "Add to favorites"}</button>
+        <button class="fav-toggle ${item.favorite ? "on" : ""}" id="favBtn"><span class="star">${STAR_SVG}</span> ${item.favorite ? "Favorited" : "Add to favorites"}</button>
       </div>
       <div class="sheet-row">
         <div class="sheet-label">Notes</div>
@@ -1458,7 +3033,7 @@
     const starRow = $("#starRow");
     for(let i=1;i<=10;i++){
       const s = document.createElement("span");
-      s.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg>`;
+      s.innerHTML = STAR_SVG;
       if(item.rating && i <= item.rating) s.classList.add("on");
       s.addEventListener("click", () => { item.rating = (item.rating === i) ? null : i; saveList(); openDetail(item); });
       starRow.appendChild(s);
@@ -1766,7 +3341,12 @@
   async function resolverSearch(term){
     const el = $("#resolverResults");
     if(!term || term.trim().length < 2){ el.innerHTML = ""; return; }
-    el.innerHTML = `<div class="hint">Searching…</div>`;
+    el.innerHTML = loadingHtml("Searching");
+    // Was missing the abort-previous-token step that the identical pattern
+    // elsewhere (doSearch/doDiscoverSearch/runDiscover) already has — without
+    // it, a slower older request could resolve after a newer one and
+    // overwrite its results with stale data.
+    if(resolverSearchToken) resolverSearchToken.aborted = true;
     const token = { aborted:false };
     resolverSearchToken = token;
     try{
@@ -1825,6 +3405,7 @@
   let pickerItemRef = null;
 
   const listsOverlay = $("#listsOverlay");
+  $("#moreTimelineBtn").addEventListener("click", openTimelineOverlay);
   $("#moreListsBtn").addEventListener("click", () => { listsOverlay.classList.add("open"); showListsHome(); });
   $("#closeLists").addEventListener("click", () => listsOverlay.classList.remove("open"));
 
@@ -2043,6 +3624,113 @@
     return count;
   }
 
+  function computeStatusCounts(items){
+    const counts = { watching:0, reading:0, completed:0, onhold:0, dropped:0 };
+    items.forEach(i => { if(counts[i.status] !== undefined) counts[i.status]++; });
+    return counts;
+  }
+
+  function computeAverageRating(items){
+    const rated = items.filter(i => i.rating);
+    if(!rated.length) return null;
+    return (rated.reduce((sum,i) => sum + i.rating, 0) / rated.length).toFixed(1);
+  }
+
+  // "Average episodes per day" reads as intensity on days you actually
+  // engaged, not spread across every calendar day since you started —
+  // otherwise a long-idle account would show a misleadingly tiny number.
+  function computeAvgPerDay(items){
+    const daysSet = new Set();
+    let total = 0;
+    items.forEach(item => (item.history||[]).forEach(h => { if(h.watchedAt){ daysSet.add(dateKey(h.watchedAt)); total++; } }));
+    if(!daysSet.size) return null;
+    return (total / daysSet.size).toFixed(1);
+  }
+
+  function computeLongestBinge(items){
+    const perDay = {};
+    items.forEach(item => (item.history||[]).forEach(h => { if(h.watchedAt){ const k = dateKey(h.watchedAt); perDay[k] = (perDay[k]||0)+1; } }));
+    const vals = Object.values(perDay);
+    return vals.length ? Math.max(...vals) : 0;
+  }
+
+  function computeTotalHours(items){
+    const totalMinutes = items.reduce((sum,i) => sum + i.progress * (i.duration || 24), 0);
+    return Math.round(totalMinutes / 60);
+  }
+
+  // AniList doesn't publish per-chapter read times, so this is a rough,
+  // clearly-labeled estimate (5 minutes/chapter) rather than a real figure —
+  // still more useful than omitting reading time entirely.
+  const EST_MINUTES_PER_CHAPTER = 5;
+  function computeReadingHours(items){
+    const chapters = items.reduce((sum,i) => sum + i.progress, 0);
+    return Math.round((chapters * EST_MINUTES_PER_CHAPTER) / 60);
+  }
+
+  function computeCompletionRate(items){
+    if(!items.length) return null;
+    const completed = items.filter(i => i.status === "completed").length;
+    return Math.round((completed / items.length) * 100);
+  }
+
+  // Personal-section stats intentionally read from the full combined list
+  // (both anime and reading), not the type currently selected by the
+  // Anime/Reading toggle — they describe the person, not one mode.
+  function topTally(pairs){
+    const tally = {};
+    pairs.forEach(v => { if(v) tally[v] = (tally[v]||0)+1; });
+    const entries = Object.entries(tally).sort((a,b) => b[1]-a[1]);
+    return entries.length ? entries[0][0] : null;
+  }
+
+  // Studio/mangaka come from item.extra, populated only once a title's
+  // Show Detail page has been opened (that's an on-demand fetch by design —
+  // see SHOW_EXTRA_QUERY). So this reflects titles you've actually looked
+  // at, not the whole library, until you've browsed around more.
+  function computeFavoriteStudio(allItems){ return topTally(allItems.filter(i => i.type === "anime").map(i => i.extra && i.extra.studio)); }
+  function computeFavoriteMangaka(allItems){ return topTally(allItems.filter(i => i.type === "reading").map(i => i.extra && i.extra.creator)); }
+  function computeFavoriteCharacter(allItems){ return topTally(allItems.map(i => (i.favoriteCharacter||"").trim())); }
+
+  function computeMostActive(allItems){
+    const byMonth = {}, byYear = {};
+    allItems.forEach(item => (item.history||[]).forEach(h => {
+      if(!h.watchedAt) return;
+      const d = new Date(h.watchedAt);
+      const mKey = `${d.getFullYear()}-${d.getMonth()}`;
+      const yKey = String(d.getFullYear());
+      byMonth[mKey] = (byMonth[mKey]||0)+1;
+      byYear[yKey] = (byYear[yKey]||0)+1;
+    }));
+    const monthEntries = Object.entries(byMonth).sort((a,b) => b[1]-a[1]);
+    const yearEntries = Object.entries(byYear).sort((a,b) => b[1]-a[1]);
+    const monthLabel = monthEntries.length
+      ? new Date(Number(monthEntries[0][0].split("-")[0]), Number(monthEntries[0][0].split("-")[1]), 1).toLocaleString(undefined, { month:"long", year:"numeric" })
+      : null;
+    return { month: monthLabel, year: yearEntries.length ? yearEntries[0][0] : null };
+  }
+
+  // A title counts as "journaled" once any Journal-tab field has been
+  // touched — this is deliberately broader than just Personal Notes, since
+  // a mood or a favorite scene is just as much a memory as a paragraph.
+  function hasJournalEntry(item){
+    return !!(item.startedDate || item.finishedDate || item.mood || item.rating ||
+      (item.favoriteCharacter && item.favoriteCharacter.trim()) ||
+      (item.favoriteScene && item.favoriteScene.trim()) ||
+      (item.wouldRecommend === true || item.wouldRecommend === false) ||
+      (item.rewatchCount && item.rewatchCount > 0) ||
+      (item.whyDropped && item.whyDropped.trim()) ||
+      (item.notes && item.notes.trim()));
+  }
+
+  function computeJournalStats(allItems){
+    const entries = allItems.filter(hasJournalEntry).length;
+    const notesWords = allItems.reduce((sum,i) => sum + ((i.notes||"").trim() ? i.notes.trim().split(/\s+/).length : 0), 0);
+    const rewatchCount = allItems.filter(i => i.type === "anime").reduce((sum,i) => sum + (i.rewatchCount||0), 0);
+    const rereadCount = allItems.filter(i => i.type === "reading").reduce((sum,i) => sum + (i.rewatchCount||0), 0);
+    return { entries, notesWords, rewatchCount, rereadCount };
+  }
+
   // Daily buckets for the last N days — hours (anime) or count (reading)
   // per day, matching the day-by-day bar chart from the TV Time app.
   function computeDailyBuckets(items, n, asHours){
@@ -2058,6 +3746,21 @@
       if(byKey[key]) byKey[key].value += asHours ? (item.duration || 24) / 60 : 1;
     }));
     return buckets;
+  }
+
+  // Small key/value widget for text-ish stats (Favorite Studio, Most Active
+  // Month, …) — same .stat-card shell as the numeric widgets so the grid
+  // stays visually consistent, just a smaller type size for longer values
+  // and an honest, specific placeholder instead of a bare "—" when there's
+  // not enough data yet.
+  function statTextCard(label, value, emptyHint){
+    const inner = value
+      ? `<div class="num" style="font-size:15px; line-height:1.3;">${escapeHtml(value)}</div>`
+      : `<div class="num" style="font-size:11.5px; font-weight:500; color:var(--fg-faint); line-height:1.4;">${escapeHtml(emptyHint)}</div>`;
+    return `<div class="stat-card">${inner}<div class="lbl">${escapeHtml(label)}</div></div>`;
+  }
+  function statNumCard(label, value){
+    return `<div class="stat-card"><div class="num">${value === null || value === undefined ? '—' : value}</div><div class="lbl">${escapeHtml(label)}</div></div>`;
   }
 
   function renderStats(){
@@ -2082,7 +3785,7 @@
             <span class="hn"><b>${ts.days}</b>days</span>
             <span class="hn"><b>${ts.hours}</b>hours</span>
           </div>
-          <div class="hero-sub">${last7} hours in the last 7 days</div>
+          <div class="hero-sub">${last7} hours in the last 7 days · ${streak.current}-day current streak</div>
         </div>`;
     }else{
       const last7 = countInLastNDays(items, 7);
@@ -2090,24 +3793,62 @@
         <div class="hero-card">
           <div class="hero-title">Chapters read</div>
           <div class="hero-numbers"><span class="hn"><b>${episodesWatched}</b>total</span></div>
-          <div class="hero-sub">${last7} chapters in the last 7 days</div>
+          <div class="hero-sub">${last7} chapters in the last 7 days · ${streak.current}-day current streak</div>
         </div>`;
     }
 
     const dailyBuckets = computeDailyBuckets(items, 12, isAnime);
     const maxDaily = Math.max(1, ...dailyBuckets.map(b => b.value));
 
+    let modeMetricsHtml;
+    if(isAnime){
+      const statusCounts = computeStatusCounts(items);
+      const avgRating = computeAverageRating(items);
+      const avgPerDay = computeAvgPerDay(items);
+      const binge = computeLongestBinge(items);
+      const totalHours = computeTotalHours(items);
+      modeMetricsHtml = `
+        <div class="section-title">Status</div>
+        <div class="stat-cards two-col">
+          ${statNumCard("Completed", statusCounts.completed)}
+          ${statNumCard("Watching", statusCounts.watching)}
+          ${statNumCard("On Hold", statusCounts.onhold)}
+          ${statNumCard("Dropped", statusCounts.dropped)}
+        </div>
+        <div class="section-title">Per day (last 12 days)</div>
+        <div class="bar-chart">${dailyBuckets.map(b => `<div class="bar" style="height:${Math.max(4, Math.round((b.value/maxDaily)*100))}%;"><span class="bar-lbl">${b.label}</span></div>`).join('')}</div>
+        <div class="stat-cards" style="margin-top:26px;">
+          ${statNumCard("Episodes watched", episodesWatched)}
+          ${statNumCard("Hours watched", totalHours)}
+          ${statNumCard("Average rating", avgRating !== null ? avgRating + "/10" : null)}
+        </div>
+        <div class="stat-cards">
+          ${statNumCard("Avg. episodes / active day", avgPerDay)}
+          ${statNumCard("Longest binge (1 day)", binge)}
+          ${statNumCard("Longest streak (days)", streak.longest)}
+        </div>`;
+    }else{
+      const volumes = items.reduce((sum,i) => sum + (i.volumeProgress||0), 0);
+      const readingHours = computeReadingHours(items);
+      const completionRate = computeCompletionRate(items);
+      modeMetricsHtml = `
+        <div class="section-title">Per day (last 12 days)</div>
+        <div class="bar-chart">${dailyBuckets.map(b => `<div class="bar" style="height:${Math.max(4, Math.round((b.value/maxDaily)*100))}%;"><span class="bar-lbl">${b.label}</span></div>`).join('')}</div>
+        <div class="stat-cards" style="margin-top:26px;">
+          ${statNumCard("Chapters read", episodesWatched)}
+          ${statNumCard("Volumes read", volumes)}
+          ${statNumCard("Reading hours (est.)", readingHours)}
+        </div>
+        <div class="stat-cards two-col">
+          ${statNumCard("Longest reading streak (days)", streak.longest)}
+          ${statNumCard("Reading completion rate", completionRate !== null ? completionRate + "%" : null)}
+        </div>`;
+    }
+
     const body = $("#statsBody");
     body.innerHTML = `
       ${heroHtml}
-      <div class="section-title">Per day (last 12 days)</div>
-      <div class="bar-chart">${dailyBuckets.map(b => `<div class="bar" style="height:${Math.max(4, Math.round((b.value/maxDaily)*100))}%;"><span class="bar-lbl">${b.label}</span></div>`).join('')}</div>
-
-      <div class="stat-cards" style="margin-top:26px;">
-        <div class="stat-card"><div class="num">${episodesWatched}</div><div class="lbl">${isAnime?"Episodes watched":"Chapters read"}</div></div>
-        <div class="stat-card"><div class="num">${completed}</div><div class="lbl">Completed</div></div>
-        <div class="stat-card"><div class="num">${streak.current}</div><div class="lbl">Current streak (days)</div></div>
-      </div>
+      ${modeMetricsHtml}
       <div class="section-title">Last 6 months</div>
       <div class="bar-chart">${buckets.map(b => `<div class="bar" style="height:${Math.max(4, Math.round((b.count/maxBucket)*100))}%;"><span class="bar-lbl">${b.label}</span></div>`).join('')}</div>
       <div class="section-title" style="margin-top:26px;">Top genres</div>
@@ -2115,8 +3856,41 @@
       <div class="section-title">Badges</div>
       <div class="badge-grid">${BADGES[statsMode].map(b => {
         const earned = b.check({ episodesWatched, completed, streak });
-        return `<div class="badge-cell ${earned?'earned':''}"><div class="bname">${earned?'<span style="display:inline-flex;width:11px;height:11px;vertical-align:-1px;"><svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.879l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></svg></span> ':''}${b.name}</div><div class="bdesc">${b.desc}</div></div>`;
+        return `<div class="badge-cell ${earned?'earned':''}"><div class="bname">${earned?`<span style="display:inline-flex;width:11px;height:11px;vertical-align:-1px;">${STAR_SVG}</span> `:''}${b.name}</div><div class="bdesc">${b.desc}</div></div>`;
       }).join('')}</div>
+    `;
+
+    renderStatsCross();
+  }
+
+  // Personal + Journal sections read from the full library (both anime and
+  // reading) regardless of which mode the toggle above is on — they
+  // describe the person, not one list, so they don't re-render on toggle.
+  function renderStatsCross(){
+    const el = $("#statsCrossBody");
+    const mostActive = computeMostActive(list);
+    const journalStats = computeJournalStats(list);
+    const topGenre = computeGenreTally(list)[0];
+
+    el.innerHTML = `
+      <div class="section-title">Personal</div>
+      <div class="stat-cards">
+        ${statTextCard("Favorite genre", topGenre ? topGenre[0] : null, "Not enough data yet")}
+        ${statTextCard("Favorite studio", computeFavoriteStudio(list), "Open a title's About tab to start tracking")}
+        ${statTextCard("Favorite mangaka", computeFavoriteMangaka(list), "Open a title's About tab to start tracking")}
+      </div>
+      <div class="stat-cards">
+        ${statTextCard("Favorite character", computeFavoriteCharacter(list), "Add one in a title's Journal")}
+        ${statTextCard("Most active month", mostActive.month, "Not enough data yet")}
+        ${statTextCard("Most active year", mostActive.year, "Not enough data yet")}
+      </div>
+      <div class="section-title">Journal</div>
+      <div class="stat-cards two-col">
+        ${statNumCard("Journal entries", journalStats.entries)}
+        ${statNumCard("Notes written (words)", journalStats.notesWords)}
+        ${statNumCard("Rewatch count", journalStats.rewatchCount)}
+        ${statNumCard("Reread count", journalStats.rereadCount)}
+      </div>
     `;
   }
 
@@ -2148,9 +3922,16 @@
     });
   })();
 
+  // Shared by runDiscover (browse) and doDiscoverSearch so that whichever
+  // request lands last wins the render — otherwise a slow search response
+  // can resolve after a browse tab switch (or a cleared search box) and
+  // clobber it with stale results.
+  let discoverRequestToken = null;
+
   async function runDiscover(){
     const el = $("#discoverResults");
-    el.innerHTML = `<div class="hint">Loading…</div>`;
+    el.innerHTML = loadingHtml("Loading");
+    const token = { aborted:false }; discoverRequestToken = token;
     const type = mode === "anime" ? "ANIME" : "MANGA";
     const vars = { type };
     if(discoverTab === "trending") vars.sort = ["TRENDING_DESC"];
@@ -2168,8 +3949,10 @@
     }
     try{
       const data = await anilistQuery(DISCOVER_QUERY, vars);
+      if(token.aborted) return;
       renderDiscoverResults(data.Page.media);
     }catch(e){
+      if(token.aborted) return;
       el.innerHTML = `<div class="hint">Couldn't reach AniList. Check your connection.</div>`;
     }
   }
@@ -2187,7 +3970,7 @@
       card.innerHTML = `
         <img src="${m.coverImage.medium}" alt="" loading="lazy" />
         <div class="dc-title">${escapeHtml(title)}</div>
-        <button class="dc-add ${already?'added':''}">${already?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'}</button>`;
+        <button class="dc-add ${already?'added':''}" aria-label="${already ? 'Already in your list' : 'Add ' + escapeHtml(title)}">${already?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'}</button>`;
       card.querySelector(".dc-add").addEventListener("click", (e) => {
         e.stopPropagation();
         if(itemById(m.id, mode)){ toast("Already in your list."); return; }
@@ -2196,6 +3979,108 @@
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`; btn.classList.add("added");
       });
       grid.appendChild(card);
+    });
+  }
+
+  // Lets users search AniList directly from the Discover tab instead of only
+  // through the fabAdd overlay. Swaps out the browse tabs while a query is
+  // active; clearing the box restores the previous browse tab's results.
+  let discoverSearchDebounce = null;
+  $("#discoverSearchInput").addEventListener("input", (e) => {
+    clearTimeout(discoverSearchDebounce);
+    const val = e.target.value.trim();
+    discoverSearchDebounce = setTimeout(() => {
+      if(val.length >= 2) doDiscoverSearch(val);
+      else{
+        $("#discoverTabs").style.display = "";
+        $("#genrePicker").style.display = discoverTab === "genre" ? "flex" : "none";
+        runDiscover();
+      }
+    }, 350);
+  });
+
+  async function doDiscoverSearch(term){
+    $("#discoverTabs").style.display = "none";
+    $("#genrePicker").style.display = "none";
+    const el = $("#discoverResults");
+    el.innerHTML = loadingHtml("Searching");
+    if(discoverRequestToken) discoverRequestToken.aborted = true;
+    const token = { aborted:false }; discoverRequestToken = token;
+    try{
+      const data = await anilistQuery(DISCOVER_SEARCH_QUERY, { search: term });
+      if(token.aborted) return;
+      renderDiscoverSearchResults(data.Page.media);
+    }catch(e){
+      if(token.aborted) return;
+      el.innerHTML = `<div class="hint">Search failed. Check your connection.</div>`;
+    }
+  }
+
+  // One AniList row, list-style (poster + title + format/episode-count),
+  // reusing the exact .result component the fabAdd search overlay already
+  // uses — same look, so this doesn't introduce a second unrelated list
+  // style. The whole row opens the title's AniList page (consistent with
+  // how the Show Detail page's "Discover More" recommendation cards behave)
+  // so you can check details before deciding to add it; only the Add button
+  // itself performs the add, and stops the row's click from also firing.
+  function buildDiscoverResultRow(m, type){
+    const already = itemById(m.id, type);
+    const title = m.title.english || m.title.romaji;
+    const metaLine = type === "anime"
+      ? `${m.format || "—"} · ${m.episodes ? m.episodes + " eps" : "eps unknown"}`
+      : `${originLabel(m.countryOfOrigin, m.format)} · ${m.chapters ? m.chapters + " ch" : "ch unknown"}`;
+    return `
+      <div class="result clickable" data-id="${m.id}" data-type="${type}">
+        <img src="${m.coverImage.medium}" alt="" loading="lazy" />
+        <div><div class="rtitle">${escapeHtml(title)}</div><div class="rmeta">${metaLine}</div></div>
+        <div class="radd"><button class="btn ${already ? "ghost" : "primary"}" data-add>${already ? "Added" : "+ Add"}</button></div>
+      </div>`;
+  }
+
+  // Splits mixed search results into "Shows" (anime) and "Reading" (manga)
+  // sections instead of one ambiguous list — this is the fix for search
+  // results being hard to tell apart by type.
+  function renderDiscoverSearchResults(media){
+    const el = $("#discoverResults");
+    const animeResults = media.filter(m => m.type === "ANIME");
+    const mangaResults = media.filter(m => m.type === "MANGA");
+    if(!animeResults.length && !mangaResults.length){ el.innerHTML = `<div class="hint">Nothing found.</div>`; return; }
+
+    const section = (label, items) => items.length
+      ? `<div class="section-title">${label}</div>${items.map(m => buildDiscoverResultRow(m, m.type === "ANIME" ? "anime" : "reading")).join('')}`
+      : '';
+    el.innerHTML = section("Shows", animeResults) + section("Reading", mangaResults);
+
+    const byKey = {};
+    animeResults.forEach(m => byKey["anime:" + m.id] = m);
+    mangaResults.forEach(m => byKey["reading:" + m.id] = m);
+
+    el.querySelectorAll(".result").forEach(row => {
+      const type = row.dataset.type;
+      const id = Number(row.dataset.id);
+      const m = byKey[type + ":" + id];
+      row.addEventListener("click", (e) => {
+        if(e.target.closest("[data-add]")) return;
+        // Show Detail's Episodes/Journal tabs write straight to the tracked
+        // item and only persist if it's actually in `list` — so opening our
+        // own detail page for a not-yet-added result means adding it first
+        // (silently), otherwise anything typed there would vanish unsaved.
+        let existing = itemById(id, type);
+        if(!existing){
+          addToList(m, type);
+          existing = itemById(id, type);
+          const addBtn = row.querySelector("[data-add]");
+          if(addBtn) addBtn.outerHTML = `<button class="btn ghost">Added</button>`;
+        }
+        openShowDetail(existing);
+      });
+      const addBtn = row.querySelector("[data-add]");
+      addBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if(itemById(m.id, type)){ toast("Already in your list."); return; }
+        addToList(m, type);
+        addBtn.outerHTML = `<button class="btn ghost">Added</button>`;
+      });
     });
   }
 
@@ -2239,7 +4124,7 @@
       card.innerHTML = `
         <img src="${m.coverImage.medium}" alt="" loading="lazy" />
         <div class="dc-title">${escapeHtml(title)}</div>
-        <button class="dc-add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>`;
+        <button class="dc-add" aria-label="Add ${escapeHtml(title)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>`;
       card.querySelector(".dc-add").addEventListener("click", (e) => {
         e.stopPropagation();
         if(itemById(m.id, "anime")){ toast("Already in your list."); return; }
@@ -2249,6 +4134,21 @@
       });
       grid.appendChild(card);
     });
+  }
+
+  // Runs every local (non-network) detector in one pass. The network-backed
+  // ones (new episode / new chapter) already fire from inside refreshAiring
+  // itself, right where the fresh data lands — everything here works fully
+  // offline, reusing whatever was last cached.
+  function scanForTimelineEvents(){
+    scanAiringNotifications();
+    scanJournalHistory();
+    scanJournalAnniversaries();
+    scanStatisticsMilestones();
+    scanContinueReminders();
+    scanWatchLaterReminders();
+    updateNotifWidget();
+    if(timelineOverlayOpen) renderTimeline();
   }
 
   // ---------- countdown re-render every minute ----------
@@ -2264,8 +4164,10 @@
   // ---------- initial paint ----------
   renderTabs();
   render();
+  scanForTimelineEvents();
   if(navigator.onLine) refreshAiring();
   setInterval(refreshAiring, 15 * 60 * 1000);
+  setInterval(scanForTimelineEvents, 5 * 60 * 1000);
 })();
 </script>
 </body>
