@@ -269,10 +269,12 @@
   .wisdom-hidden-hint button{ background:none; border:none; color:var(--accent); font-size:11px; cursor:pointer; font-family:var(--font-body); font-weight:600; padding:4px; }
 
   /* Timeline */
-  .tl-row{ display:flex; gap:10px; align-items:flex-start; padding:11px 0; cursor:pointer; position:relative; }
+  .tl-row{ display:flex; gap:10px; align-items:flex-start; padding:11px 0; cursor:pointer; position:relative;
+    max-height:140px; transition:opacity .28s ease, transform .28s ease, max-height .28s ease, padding .28s ease; }
   .tl-row .tl-title{ transition:color .15s; }
   .tl-row:hover .tl-title{ color:var(--accent); }
   .tl-row.unread::before{ content:""; position:absolute; left:-11px; top:16px; width:6px; height:6px; border-radius:50%; background:var(--accent); }
+  .tl-row.tl-removing{ opacity:0; transform:translateX(28px); max-height:0; padding-top:0; padding-bottom:0; overflow:hidden; pointer-events:none; }
   .tl-icon{ width:32px; height:45px; border-radius:6px; background:var(--bg-card); border:1px solid var(--border);
     display:flex; align-items:center; justify-content:center; flex:0 0 auto; color:var(--accent); }
   .tl-icon svg{ width:15px; height:15px; }
@@ -281,6 +283,15 @@
   .tl-title{ font-size:12.5px; font-weight:600; line-height:1.35; }
   .tl-desc{ font-size:11px; color:var(--fg-dim); margin-top:2px; line-height:1.4; }
   .tl-time{ font-size:9.5px; color:var(--fg-faint); margin-top:4px; }
+  .tl-read-btn{ width:24px; height:24px; border-radius:50%; background:var(--bg-alt); border:1px solid var(--border);
+    color:var(--fg-faint); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto;
+    align-self:center; transition:border-color .15s, color .15s, background .15s; }
+  .tl-read-btn:hover{ border-color:var(--border-hover); color:var(--fg-dim); }
+  .tl-read-btn svg{ width:9px; height:9px; }
+  .tl-clear-btn{ width:30px; height:30px; border-radius:50%; background:none; border:1px solid var(--border);
+    color:var(--fg-dim); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .15s, color .15s; }
+  .tl-clear-btn:hover{ border-color:var(--status-red); color:var(--status-red); }
+  .tl-clear-btn svg{ width:14px; height:14px; }
 
   /* Notification settings */
   .notif-setting-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--border); }
@@ -406,6 +417,20 @@
     color:var(--fg); font-size:12px; padding:8px 14px; border-radius:8px; border:1px solid var(--border); opacity:0;
     transition:opacity .25s, transform .25s; z-index:60; letter-spacing:.2px; pointer-events:none; max-width:80vw; text-align:center; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* Skip-ahead confirmation dialog */
+  .confirm-overlay{ position:fixed; inset:0; z-index:200; display:none; align-items:flex-end; justify-content:center; padding:0 14px 28px; }
+  .confirm-overlay.open{ display:flex; }
+  .confirm-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.55); }
+  .confirm-sheet{ position:relative; z-index:1; width:100%; max-width:360px; background:var(--bg-card-hi);
+    border:1px solid var(--border); border-radius:14px; padding:20px 18px 6px; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+  .confirm-title{ font-family:var(--font-heading); font-size:16px; font-weight:700; margin-bottom:8px; }
+  .confirm-body{ font-size:12.5px; color:var(--fg-dim); line-height:1.55; margin-bottom:4px; }
+  .confirm-actions{ display:flex; flex-direction:column; margin-top:6px; }
+  .confirm-action{ background:none; border:none; border-top:1px solid var(--border); color:var(--fg);
+    font-family:var(--font-body); font-size:13.5px; font-weight:600; text-align:right; padding:14px 2px; cursor:pointer; }
+  .confirm-action:hover{ color:var(--accent); }
+  .confirm-action.ghost{ color:var(--fg-faint); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:.4px; }
 
   /* Detail sheet */
   .sheet-row{ margin-bottom:18px; }
@@ -574,10 +599,33 @@
   .ep-row .ernum{ font-size:12px; font-weight:600; width:34px; flex:0 0 auto; font-family:var(--font-heading); }
   .ep-row .ertitle{ flex:1; font-size:12px; color:var(--fg-dim); }
   .ep-row.watched .ertitle{ color:var(--fg); }
-  .ep-row .ertick{ width:26px; height:26px; border-radius:50%; background:var(--tick-bg); color:var(--tick-fg);
+  .ertick{ width:26px; height:26px; border-radius:50%; background:var(--tick-bg); color:var(--tick-fg);
     border:1px solid var(--tick-border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
-  .ep-row .ertick svg{ width:13px; height:13px; }
-  .ep-row.watched .ertick{ background:var(--status-green); color:var(--bg); }
+  .ertick svg{ width:13px; height:13px; }
+  .ep-row.watched .ertick, .ertick.done{ background:var(--status-green); color:var(--bg); }
+
+  /* Show Detail: multi-season grouping (Continue tracking carousel + one
+     collapsible section per tracked season, reusing .detail-section) */
+  .sd-continue-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:4px; margin-bottom:20px; scrollbar-width:none; }
+  .sd-continue-row::-webkit-scrollbar{ display:none; }
+  .sd-continue-card{ flex:0 0 82%; display:flex; align-items:center; gap:12px; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:10px; padding:10px; cursor:pointer; transition:border-color .15s; }
+  .sd-continue-card:hover{ border-color:var(--border-hover); }
+  .sd-continue-card img{ width:56px; height:56px; border-radius:8px; object-fit:cover; background:var(--bg-alt); flex:0 0 auto; }
+  .sd-cc-info{ flex:1; min-width:0; }
+  .sd-cc-big{ font-size:14px; font-weight:600; font-family:var(--font-heading); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sd-cc-sub{ font-size:11.5px; color:var(--fg-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px; }
+
+  .sd-allep-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .sd-allep-header span{ font-family:var(--font-heading); font-size:14px; font-weight:600; }
+
+  .sd-season summary{ cursor:pointer; }
+  .sd-season-title{ display:flex; align-items:center; gap:8px; font-family:var(--font-heading); font-size:13.5px; font-weight:600; }
+  .sd-season-right{ display:flex; align-items:center; gap:10px; }
+  .sd-season-count{ font-size:11.5px; color:var(--fg-dim); font-weight:400; }
+  .sd-season-bar{ height:3px; border-radius:2px; overflow:hidden; margin:10px 0 2px; background:var(--border); }
+  .sd-season-bar > div{ height:100%; background:var(--accent); }
+  .sd-season-bar.complete > div{ background:var(--status-green); }
 
   /* Show Detail: persistent topbar (close/menu stay in the same place
      before and after scrolling; the title fades in once the banner
@@ -658,7 +706,7 @@
   .cast-item{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:10px 6px 8px; transition:border-color .15s; }
   .cast-item:hover{ border-color:var(--border-hover); }
 
-  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } .card, .more-row, .fab{ transition:none; } .detail-section summary .chev-icon{ transition:none; } }
+  @media (prefers-reduced-motion: reduce){ .toast{ transition:none; } .card, .more-row, .fab{ transition:none; } .detail-section summary .chev-icon{ transition:none; } .tl-row{ transition:none; } }
 </style>
 </head>
 <body>
@@ -692,7 +740,8 @@
   </div>
 
   <div class="tabpage" id="page-more">
-    <div class="page-title">More</div>
+    <div class="page-title">Profile</div>
+    <div id="moreWisdomSlot"></div>
     <div class="statmodes">
       <button class="statmode active" data-sm="anime">Anime</button>
       <button class="statmode" data-sm="reading">Reading</button>
@@ -733,7 +782,7 @@
   <button class="tab-item active" data-tab="anime"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg></span><span class="tab-label">Anime</span></button>
   <button class="tab-item" data-tab="reading"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg></span><span class="tab-label">Reading</span></button>
   <button class="tab-item" data-tab="discover"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="tab-label">Discover</span></button>
-  <button class="tab-item" data-tab="more"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span><span class="tab-label">More</span></button>
+  <button class="tab-item" data-tab="more"><span class="tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg></span><span class="tab-label">Profile</span></button>
 </nav>
 <button class="fab" id="fabAdd" aria-label="Add"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
@@ -937,6 +986,22 @@
     <button class="ov-close" id="closeNotifSettings" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
   </div>
   <div class="ov-body" id="notifSettingsBody"></div>
+</div>
+
+<!-- skip-ahead confirmation: shown when marking an episode/chapter watched
+     would silently mark unwatched earlier ones too, since progress is a
+     single "watched up to here" number rather than per-episode state -->
+<div class="confirm-overlay" id="skipConfirmOverlay">
+  <div class="confirm-backdrop" id="skipConfirmBackdrop"></div>
+  <div class="confirm-sheet">
+    <div class="confirm-title">Mark previous <span id="skipConfirmUnit">episodes</span>?</div>
+    <div class="confirm-body" id="skipConfirmBody">Do you want to mark all previous episodes as watched?</div>
+    <div class="confirm-actions">
+      <button class="confirm-action" id="skipConfirmYes">Yes</button>
+      <button class="confirm-action" id="skipConfirmNo">No</button>
+      <button class="confirm-action ghost" id="skipConfirmNever">Never for this show</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1187,6 +1252,13 @@
   let currentWisdomQuote = null;
   function activeWisdomQuote(){ return currentWisdomQuote || getTodaysWisdom(); }
 
+  function renderWisdomSlot(){
+    const slot = $("#moreWisdomSlot");
+    if(!slot) return;
+    slot.innerHTML = "";
+    slot.appendChild(buildWisdomWidgetBlock());
+  }
+
   function buildWisdomWidgetBlock(){
     const wrap = document.createElement("div");
     if(localStorage.getItem("anitrack_wisdom_hidden") === "1"){
@@ -1194,7 +1266,7 @@
       wrap.innerHTML = `<span>Daily Wisdom widget hidden.</span><button id="wisdomShowBtn">Show</button>`;
       wrap.querySelector("#wisdomShowBtn").addEventListener("click", () => {
         localStorage.removeItem("anitrack_wisdom_hidden");
-        render();
+        renderWisdomSlot();
       });
       return wrap;
     }
@@ -1247,12 +1319,12 @@
       e.stopPropagation();
       const pool = WISDOM_QUOTES.filter(x => x.id !== q.id);
       currentWisdomQuote = pool[Math.floor(Math.random() * pool.length)];
-      render();
+      renderWisdomSlot();
     });
     wrap.querySelector("#wisdomHideBtn").addEventListener("click", (e) => {
       e.stopPropagation();
       localStorage.setItem("anitrack_wisdom_hidden", "1");
-      render();
+      renderWisdomSlot();
     });
     const scene = wrap.querySelector(".ww-scene");
     scene.addEventListener("click", () => openWisdomOverlay(q));
@@ -1440,41 +1512,104 @@
     return y === 1 ? "1 Year Ago" : `${y} Years Ago`;
   }
 
+  const TL_READ_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+
   function buildTimelineRow(entry){
     const iconSvg = TL_ICONS[entry.category] || TL_ICONS.milestone;
     const media = entry.poster
       ? `<img class="tl-poster" src="${entry.poster}" alt="" loading="lazy" />`
       : `<div class="tl-icon">${iconSvg}</div>`;
     const time = new Date(entry.timestamp).toLocaleString(undefined, { month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
-    return `<div class="tl-row${entry.read ? '' : ' unread'}" data-id="${entry.id}">
+    return `<div class="tl-row unread" data-id="${entry.id}">
       ${media}
       <div class="tl-body">
         <div class="tl-title">${escapeHtml(entry.title)}</div>
         <div class="tl-desc">${escapeHtml(entry.description)}</div>
         <div class="tl-time">${time}</div>
       </div>
+      <button class="tl-read-btn" data-id="${entry.id}" aria-label="Mark as read">${TL_READ_ICON}</button>
     </div>`;
+  }
+
+  // Marking an entry read also removes it from the visible list (it stays
+  // in `timeline` storage with read:true so addTimelineEntry's id dedupe
+  // still sees it and never re-logs the same event). The row slides/fades
+  // out via .tl-removing first, then a full renderTimeline() rebuilds the
+  // list/groups once the animation has finished.
+  const TL_REMOVE_ANIM_MS = 280;
+  function removeTimelineRow(row){
+    if(!row) return;
+    row.classList.add("tl-removing");
+    setTimeout(renderTimeline, TL_REMOVE_ANIM_MS);
   }
 
   let timelineOverlayOpen = false;
   function renderTimeline(){
     const el = $("#timelineBody");
+    el.innerHTML = "";
+    el.appendChild(buildTodaysCalendarBlock(list));
+    el.appendChild(buildReleaseCalendarBlock(list));
+
     if(!timeline.length){
-      el.innerHTML = `<div class="empty">Your anime memories begin here.<br/>As you watch, read, and journal, it'll all show up in one place.</div>`;
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.innerHTML = `Your anime memories begin here.<br/>As you watch, read, and journal, it'll all show up in one place.`;
+      el.appendChild(empty);
       return;
     }
+
+    const header = document.createElement("div");
+    header.className = "sd-allep-header";
+    header.innerHTML = `<span>Notifications</span><button class="tl-clear-btn" aria-label="Clear all notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>`;
+    header.querySelector(".tl-clear-btn").addEventListener("click", () => {
+      if(confirm("Clear all notifications? This can't be undone.")){
+        timeline = [];
+        saveTimeline();
+        updateNotifBell();
+        renderTimeline();
+      }
+    });
+    el.appendChild(header);
+
+    const unreadEntries = timeline.filter(e => !e.read);
+    if(!unreadEntries.length){
+      const caughtUp = document.createElement("div");
+      caughtUp.className = "empty";
+      caughtUp.innerHTML = `You're all caught up.`;
+      el.appendChild(caughtUp);
+      return;
+    }
+
     const groups = [];
     let lastLabel = null;
-    timeline.forEach(entry => {
+    unreadEntries.forEach(entry => {
       const label = timelineBucketLabel(entry.timestamp);
       if(label !== lastLabel){ groups.push({ label, entries: [] }); lastLabel = label; }
       groups[groups.length - 1].entries.push(entry);
     });
-    el.innerHTML = groups.map(g => `<div class="section-title">${g.label}</div>${g.entries.map(buildTimelineRow).join('')}`).join('');
-    el.querySelectorAll(".tl-row").forEach(row => {
+    const listWrap = document.createElement("div");
+    listWrap.innerHTML = groups.map(g => `<div class="section-title">${g.label}</div>${g.entries.map(buildTimelineRow).join('')}`).join('');
+    el.appendChild(listWrap);
+
+    listWrap.querySelectorAll(".tl-read-btn").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const entry = timeline.find(x => x.id === btn.dataset.id);
+        if(!entry) return;
+        entry.read = true;
+        saveTimeline();
+        updateNotifBell();
+        removeTimelineRow(btn.closest(".tl-row"));
+      });
+    });
+    listWrap.querySelectorAll(".tl-row").forEach(row => {
       row.addEventListener("click", () => {
         const entry = timeline.find(e => e.id === row.dataset.id);
-        if(entry) navigateToTimelineEntry(entry);
+        if(!entry) return;
+        entry.read = true;
+        saveTimeline();
+        updateNotifBell();
+        navigateToTimelineEntry(entry);
       });
     });
   }
@@ -1482,18 +1617,10 @@
     timelineOverlayOpen = true;
     renderTimeline();
     $("#timelineOverlay").classList.add("open");
-    // Opening the Timeline is the natural "I've seen these" moment, the
-    // same way opening a phone's notification shade clears its badge.
-    if(timeline.some(e => !e.read)){
-      timeline.forEach(e => { e.read = true; });
-      saveTimeline();
-      updateNotifBell();
-    }
   }
   function closeTimelineOverlay(){
     timelineOverlayOpen = false;
     $("#timelineOverlay").classList.remove("open");
-    updateNotifBell();
   }
   $("#closeTimeline").addEventListener("click", closeTimelineOverlay);
   $("#closeWisdom").addEventListener("click", () => $("#wisdomOverlay").classList.remove("open"));
@@ -2034,6 +2161,56 @@
     saveList();
   }
 
+  // Progress is a single "watched up to here" number, not a per-episode
+  // watched/unwatched set — so tapping a tick far ahead of your current
+  // progress silently marks everything in between watched too. This asks
+  // first, rather than assuming that's what you meant. Only guards the
+  // *forward* jump case (unmarking, and explicit "mark whole season"
+  // bulk actions, are already unambiguous and skip this).
+  let skipConfirmPending = false;
+  function confirmSkipAhead(item){
+    if(skipConfirmPending) return Promise.resolve("no");
+    skipConfirmPending = true;
+    const unit = item.type === "anime" ? "episodes" : "chapters";
+    $("#skipConfirmUnit").textContent = unit;
+    $("#skipConfirmBody").textContent = `Do you want to mark all previous ${unit} as watched?`;
+    const overlay = $("#skipConfirmOverlay");
+    overlay.classList.add("open");
+    return new Promise(resolve => {
+      const yesBtn = $("#skipConfirmYes"), noBtn = $("#skipConfirmNo"), neverBtn = $("#skipConfirmNever"), backdrop = $("#skipConfirmBackdrop");
+      const cleanup = (result) => {
+        overlay.classList.remove("open");
+        yesBtn.removeEventListener("click", onYes);
+        noBtn.removeEventListener("click", onNo);
+        neverBtn.removeEventListener("click", onNever);
+        backdrop.removeEventListener("click", onNo);
+        skipConfirmPending = false;
+        resolve(result);
+      };
+      const onYes = () => cleanup("yes");
+      const onNo = () => cleanup("no");
+      const onNever = () => cleanup("never");
+      yesBtn.addEventListener("click", onYes);
+      noBtn.addEventListener("click", onNo);
+      neverBtn.addEventListener("click", onNever);
+      backdrop.addEventListener("click", onNo);
+    });
+  }
+
+  // Shared by every "mark this episode watched" tick (episode rows, Episode
+  // Detail). Returns true if progress actually changed, false if the user
+  // cancelled — callers use that to decide whether to re-render.
+  async function markWatchedWithConfirm(item, epNumber){
+    const willSkip = epNumber > item.progress + 1;
+    if(willSkip && !item.skipConfirmDisabled){
+      const choice = await confirmSkipAhead(item);
+      if(choice === "no") return false;
+      if(choice === "never") item.skipConfirmDisabled = true;
+    }
+    setProgressToEpisode(item, epNumber, true);
+    return true;
+  }
+
   // ---------- refresh airing / metadata ----------
   let refreshing = false;
   async function refreshAiring(){
@@ -2357,11 +2534,13 @@
     });
     return html;
   }
+  // Only used inside the Timeline overlay now (see renderTimeline) — closes
+  // it first so Show Detail doesn't stack on top of another open overlay.
   function wireCalRowClicks(container){
     container.querySelectorAll(".cal-row").forEach(row => {
       row.addEventListener("click", () => {
         const item = itemById(Number(row.dataset.id), row.dataset.type);
-        if(item) openShowDetail(item);
+        if(item){ closeTimelineOverlay(); openShowDetail(item); }
       });
     });
   }
@@ -2475,14 +2654,10 @@
 
     listEl.innerHTML = "";
 
-    // Calendar widgets read the full library, not just what's "active" in
-    // the current mode, so they still render even when this tab's active
-    // list below is empty — positioned right after "Watch Next" either way,
-    // matching the Continue Watching → Today's Calendar dashboard order.
+    // Calendar widgets moved to the Timeline overlay (opened from the
+    // notification bell) — they read the full library regardless of mode,
+    // so they don't need to live on this per-mode feed anymore.
     if(!active.length){
-      listEl.appendChild(buildTodaysCalendarBlock(list));
-      listEl.appendChild(buildReleaseCalendarBlock(list));
-      listEl.appendChild(buildWisdomWidgetBlock());
       const emptyDiv = document.createElement("div");
       emptyDiv.className = "empty";
       emptyDiv.innerHTML = `Nothing actively ${mode === "anime" ? "watching" : "reading"} right now.<br/>Tap <b>+</b> to search and add ${mode === "anime" ? "an anime" : "a manga/manhwa/manhua"}, or check your other status tabs.`;
@@ -2510,10 +2685,6 @@
       nextBlock.innerHTML += `<div class="hint">Nothing actively ${mode === "anime" ? "watching" : "reading"} right now.</div>`;
     }
     listEl.appendChild(nextBlock);
-
-    listEl.appendChild(buildTodaysCalendarBlock(list));
-    listEl.appendChild(buildReleaseCalendarBlock(list));
-    listEl.appendChild(buildWisdomWidgetBlock());
 
     if(stale.length){
       const staleBlock = document.createElement("div");
@@ -2612,6 +2783,7 @@
       $("#page-more").classList.add("active");
       tabsRow.style.display = "none";
       fab.style.display = "none";
+      renderWisdomSlot();
       renderStats();
       updateListsPreview();
     }
@@ -2686,10 +2858,9 @@
     const tickBtn = $("#epTickBtn");
     tickBtn.classList.toggle("tick-done", watched);
     tickBtn.setAttribute("aria-label", `Mark this ${item.type === "anime" ? "episode" : "chapter"} ${watched ? "unwatched" : "watched"}`);
-    tickBtn.onclick = () => {
-      setProgressToEpisode(item, epNumber, !watched);
-      render();
-      renderEpisodeDetail();
+    tickBtn.onclick = async () => {
+      if(watched){ setProgressToEpisode(item, epNumber, false); render(); renderEpisodeDetail(); return; }
+      if(await markWatchedWithConfirm(item, epNumber)){ render(); renderEpisodeDetail(); }
     };
 
     const streaming = (item.externalLinks || []).filter(l => l.type === "STREAMING");
@@ -3003,12 +3174,15 @@
       </div>`).join("");
   }
 
-  function renderShowDetailEpisodes(item){
-    const el = $("#showDetailEpisodes");
+  // One item's full per-episode/chapter list, appended into `container`.
+  // Shared by the single-show (ungrouped) case and each season section's
+  // expanded body below — `onToggle` lets each caller decide what to
+  // refresh after a tick (always just re-running the top-level render, see
+  // callers) rather than duplicating the row-building logic per case.
+  function buildEpisodeRowsInto(container, item, onToggle){
     const cap = capFor(item);
     const total = Math.min(cap || Math.max(item.progress + 5, 24), 300);
-    if(!total){ el.innerHTML = `<div class="hint">Episode count unknown for this title yet.</div>`; return; }
-    el.innerHTML = "";
+    if(!total){ container.innerHTML = `<div class="hint">Episode count unknown for this title yet.</div>`; return; }
     for(let n = 1; n <= total; n++){
       const watched = n <= item.progress;
       const knownTitle = item.type === "anime" && item.episodeTitles && item.episodeTitles[n-1];
@@ -3018,18 +3192,113 @@
         <span class="ernum">${item.type === "anime" ? "E" : "CH"}${n}</span>
         <span class="ertitle">${escapeHtml(knownTitle || (item.type === "anime" ? `Episode ${n}` : `Chapter ${n}`))}</span>
         <button class="ertick" aria-label="Mark ${item.type === "anime" ? "episode" : "chapter"} ${n} ${watched ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
-      row.querySelector(".ertick").addEventListener("click", (e) => {
+      row.querySelector(".ertick").addEventListener("click", async (e) => {
         e.stopPropagation();
-        setProgressToEpisode(item, n, !watched);
-        render();
-        renderShowDetailEpisodes(item);
+        if(watched){ setProgressToEpisode(item, n, false); onToggle(); return; }
+        if(await markWatchedWithConfirm(item, n)) onToggle();
       });
       row.addEventListener("click", () => {
         showDetailOverlay.classList.remove("open");
         openEpisodeDetail(item, n);
       });
-      el.appendChild(row);
+      container.appendChild(row);
     }
+  }
+
+  function refreshEpisodesTab(){
+    render();
+    renderShowDetailEpisodes(currentShowItem);
+  }
+
+  function renderFlatEpisodes(el, item){
+    el.innerHTML = "";
+    buildEpisodeRowsInto(el, item, refreshEpisodesTab);
+  }
+
+  function buildContinueCard(g, seasonNum){
+    const cap = capFor(g);
+    const next = Math.min(g.progress + 1, cap || g.progress + 1);
+    const knownTitle = g.episodeTitles && g.episodeTitles[next - 1];
+    const card = document.createElement("div");
+    card.className = "sd-continue-card";
+    card.innerHTML = `
+      <img src="${g.customCover || g.cover || ""}" alt="" loading="lazy" />
+      <div class="sd-cc-info">
+        <div class="sd-cc-big">S${seasonNum} | E${next}</div>
+        <div class="sd-cc-sub">${escapeHtml(knownTitle || `Episode ${next}`)}</div>
+      </div>
+      <button class="tick static" aria-label="Mark next episode of Season ${seasonNum} watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+    card.querySelector(".tick").addEventListener("click", (e) => {
+      e.stopPropagation();
+      bumpProgress(g, 1);
+      refreshEpisodesTab();
+    });
+    card.addEventListener("click", () => {
+      showDetailOverlay.classList.remove("open");
+      openEpisodeDetail(g, next);
+    });
+    return card;
+  }
+
+  function buildSeasonSection(g, seasonNum){
+    const cap = capFor(g);
+    const done = cap ? g.progress >= cap : g.status === "completed";
+    const pct = cap ? Math.min(100, Math.round((g.progress / cap) * 100)) : (done ? 100 : 0);
+    const section = document.createElement("details");
+    section.className = "detail-section sd-season";
+    section.innerHTML = `
+      <summary>
+        <span class="sd-season-title">Season ${seasonNum}<svg class="chev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span class="sd-season-right">
+          <span class="sd-season-count">${g.progress}${cap ? `/${cap}` : ""}</span>
+          <button class="ertick${done ? " done" : ""}" aria-label="Mark Season ${seasonNum} ${done ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+        </span>
+      </summary>
+      <div class="sd-season-bar${done ? " complete" : ""}"><div style="width:${pct}%"></div></div>
+      <div class="sec-body"></div>`;
+    section.querySelector(".ertick").addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setProgressToEpisode(g, cap || g.progress, !done);
+      refreshEpisodesTab();
+    });
+    buildEpisodeRowsInto(section.querySelector(".sec-body"), g, refreshEpisodesTab);
+    return section;
+  }
+
+  function renderGroupedEpisodes(el, group){
+    el.innerHTML = "";
+
+    const continuing = group.filter(g => { const cap = capFor(g); return cap ? g.progress < cap : g.status !== "completed"; });
+    if(continuing.length){
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `<div class="section-title" style="margin-top:0;">Continue tracking</div><div class="sd-continue-row"></div>`;
+      el.appendChild(wrap);
+      const row = wrap.querySelector(".sd-continue-row");
+      continuing.forEach(g => row.appendChild(buildContinueCard(g, group.indexOf(g) + 1)));
+    }
+
+    const allDone = group.every(g => { const cap = capFor(g); return cap ? g.progress >= cap : g.status === "completed"; });
+    const header = document.createElement("div");
+    header.className = "sd-allep-header";
+    header.innerHTML = `<span>All episodes</span><button class="ertick${allDone ? " done" : ""}" aria-label="Mark every season ${allDone ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+    header.querySelector(".ertick").addEventListener("click", () => {
+      group.forEach(g => { const cap = capFor(g); setProgressToEpisode(g, cap || g.progress, !allDone); });
+      refreshEpisodesTab();
+    });
+    el.appendChild(header);
+
+    group.forEach((g, idx) => el.appendChild(buildSeasonSection(g, idx + 1)));
+  }
+
+  async function renderShowDetailEpisodes(item){
+    const el = $("#showDetailEpisodes");
+    el.innerHTML = loadingHtml("Loading episodes");
+    if(item.type !== "anime"){ renderFlatEpisodes(el, item); return; }
+    const group = await computeSeasonGroup(item);
+    if(currentShowItem !== item) return;
+    if(group.length <= 1){ renderFlatEpisodes(el, item); return; }
+    renderGroupedEpisodes(el, group);
   }
 
   // AniTrack's signature feature: a private diary page per title, separate
@@ -3386,6 +3655,74 @@
       const seq = edges.find(e => e.relationType === "SEQUEL" && e.node.type === "ANIME");
       return seq ? seq.node : null;
     }catch(e){ return null; }
+  }
+
+  // ---------- Show Detail: multi-season grouping ----------
+  // AniList's PREQUEL/SEQUEL relation is broader than "same show, next
+  // season" — it also links things like Naruto -> Naruto: Shippuden, which
+  // are the same franchise but distinct standalone series, not something a
+  // user tracking both would want silently merged into one grouped view.
+  // Only titles that reduce to the same base name after stripping a
+  // trailing "Season 2" / "2nd Season" style suffix are considered the same
+  // show. Deliberately conservative — a real subtitle (Shippuden, R2, an
+  // arc name) leaves the base name untouched, so it fails the match rather
+  // than false-positive.
+  const SEASON_SUFFIX_RE = /\s*[:\-–—]?\s*(?:season\s*\d+|\d+(?:st|nd|rd|th)\s*season)\s*$/i;
+  function seasonGroupBaseName(x){
+    const title = x.english || x.romaji || (x.title && (x.title.english || x.title.romaji)) || "";
+    return title.replace(SEASON_SUFFIX_RE, "").trim().toLowerCase();
+  }
+
+  // Walks the PREQUEL/SEQUEL chain one hop at a time (each hop is its own
+  // AniList entry — AniList has no single "show with seasons" concept the
+  // way TV Time does), stopping as soon as a link isn't something the user
+  // has already tracked, or isn't recognized as the same show (see above).
+  // Deliberately doesn't offer to add missing seasons here — that's the
+  // separate "Missing Sequels" finder in the More tab.
+  async function fetchGroupSiblings(startItem, direction){
+    const baseName = seasonGroupBaseName(startItem);
+    const chain = [];
+    const seen = new Set([startItem.id]);
+    let currentId = startItem.id;
+    for(let hops = 0; hops < 10; hops++){
+      let edges;
+      try{
+        const data = await anilistQuery(RELATIONS_QUERY, { id: currentId });
+        edges = (data.Media && data.Media.relations && data.Media.relations.edges) || [];
+      }catch(e){ break; }
+      const rel = edges.find(e => e.relationType === direction && e.node.type === "ANIME");
+      if(!rel || seen.has(rel.node.id)) break;
+      const tracked = itemById(rel.node.id, "anime");
+      if(!tracked) break;
+      if(seasonGroupBaseName(tracked) !== baseName) break;
+      chain.push(tracked);
+      seen.add(tracked.id);
+      currentId = tracked.id;
+    }
+    return chain;
+  }
+
+  // Resolves to every tracked season in the same franchise as `item`,
+  // chronologically ordered (prequels, then item itself, then sequels) —
+  // just [item] for anime with no tracked siblings, or any manga item
+  // (multi-part manga tracking isn't part of this feature). Cached per
+  // session under every member's id so opening any season in a group
+  // resolves the same group without re-walking the chain each time.
+  const seasonGroupCache = new Map();
+  function computeSeasonGroup(item){
+    if(item.type !== "anime") return Promise.resolve([item]);
+    if(seasonGroupCache.has(item.id)) return seasonGroupCache.get(item.id);
+    const promise = (async () => {
+      const [prequels, sequels] = await Promise.all([
+        fetchGroupSiblings(item, "PREQUEL"),
+        fetchGroupSiblings(item, "SEQUEL")
+      ]);
+      const group = [...prequels.reverse(), item, ...sequels];
+      group.forEach(g => seasonGroupCache.set(g.id, promise));
+      return group;
+    })();
+    seasonGroupCache.set(item.id, promise);
+    return promise;
   }
 
   // Writes one season's worth of progress into one AniList entry. Dedupes by
