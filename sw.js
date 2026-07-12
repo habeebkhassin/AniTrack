@@ -3,7 +3,7 @@
 // Live data (AniList API calls) always goes to the network from app.js
 // and is persisted separately in localStorage — the SW does not touch it.
 
-const CACHE_NAME = "anitrack-shell-v2";
+const CACHE_NAME = "anitrack-shell-v3";
 const SHELL_FILES = [
   "./",
   "./index.html",

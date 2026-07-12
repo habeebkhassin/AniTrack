@@ -38,6 +38,11 @@
   html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg);
     font-family:var(--font-body); -webkit-tap-highlight-color:transparent; overscroll-behavior-y: contain; }
   body{ display:flex; flex-direction:column; min-height:100vh; }
+  /* This is an installed app, not a webpage — long-pressing UI chrome
+     shouldn't trigger the browser's text-selection/"search the web" callout.
+     Journal notes and other real user-typed text stay selectable below. */
+  body{ user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  input, textarea, [contenteditable]{ user-select:text; -webkit-user-select:text; -webkit-touch-callout:default; }
   ::selection{ background:var(--accent); color:var(--bg); }
   button, select, textarea, input{ font-family:var(--font-body); }
   h1,h2,h3,.page-title,.brand,.ep-big,.ep-big-detail,.hero-title,.hero-numbers b,.stat-card .num,
@@ -50,8 +55,13 @@
   header{ position:sticky; top:0; z-index:20; background:var(--bg); padding:14px 16px 0; border-bottom:1px solid transparent; }
   .headrow{ display:flex; align-items:center; justify-content:space-between; }
   .brand{ font-weight:700; letter-spacing:.5px; font-size:18px; }
-  .dot{ width:8px; height:8px; border-radius:50%; background:var(--status-green); }
-  .dot.off{ background:var(--status-red); }
+  .notif-bell{ position:relative; background:none; border:none; padding:8px; margin:-8px; cursor:pointer;
+    color:var(--fg-faint); display:flex; align-items:center; justify-content:center; transition:color .15s, transform .15s; }
+  .notif-bell:hover{ color:var(--fg); }
+  .notif-bell:active{ transform:scale(0.92); }
+  .notif-bell svg{ width:20px; height:20px; }
+  .notif-badge{ position:absolute; top:3px; right:3px; min-width:15px; height:15px; padding:0 3px; border-radius:8px;
+    background:var(--status-red); color:#fff; font-size:9px; font-weight:700; line-height:15px; text-align:center; }
 
   .statmodes{ display:flex; gap:0; margin-bottom:14px; border-radius:8px; overflow:hidden; background:var(--bg-alt); border:1px solid var(--border); }
   .statmode{ flex:1; text-align:center; padding:9px 0; font-size:12px; letter-spacing:.3px; font-weight:600;
@@ -152,8 +162,9 @@
   .ww-scene-top{ display:flex; align-items:flex-start; justify-content:flex-end; gap:9px; margin-bottom:8px; }
   .ww-date{ font-size:9.5px; letter-spacing:1.2px; color:rgba(242,245,247,.68); padding-top:5px; }
   .ww-avatar{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--fg); flex:0 0 auto;
+    font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--fg); flex:0 0 auto; overflow:hidden;
     clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%); }
+  .ww-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
 
   .ww-dots{ position:absolute; left:18px; top:52px; display:flex; flex-direction:column; gap:5px; }
   .ww-dots span{ width:3px; height:3px; background:rgba(242,245,247,.4); }
@@ -190,10 +201,6 @@
   .tl-title{ font-size:12.5px; font-weight:600; line-height:1.35; }
   .tl-desc{ font-size:11px; color:var(--fg-dim); margin-top:2px; line-height:1.4; }
   .tl-time{ font-size:9.5px; color:var(--fg-faint); margin-top:4px; }
-
-  /* Dashboard notification widget */
-  .notif-widget-list{ display:flex; flex-direction:column; gap:6px; margin-top:10px; }
-  .notif-widget-item{ font-size:11.5px; color:var(--fg-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
   /* Notification settings */
   .notif-setting-row{ display:flex; align-items:center; justify-content:space-between; gap:14px; padding:13px 0; border-bottom:1px solid var(--border); }
@@ -260,7 +267,7 @@
     animation:pageTurn .5s ease-in-out .4s 1 both; }
   .swipe-action.armed span{ opacity:1; transform:translateX(0); }
   @keyframes pageTurn{ 0%{ transform:scaleX(1); } 50%{ transform:scaleX(.08); } 100%{ transform:scaleX(1); } }
-  .swipe-track{ display:flex; width:100%; position:relative; z-index:1; background:var(--bg-card);
+  .swipe-track{ display:flex; width:100%; min-height:116px; position:relative; z-index:1; background:var(--bg-card);
     touch-action:pan-y; will-change:transform; }
 
   .card-progress{ height:3px; border-radius:2px; overflow:hidden; margin-top:1px; background:var(--border); }
@@ -411,7 +418,7 @@
 
   /* Discover results grid */
   .disc-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
-  .disc-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; overflow:hidden; position:relative; transition:border-color .15s; }
+  .disc-card{ background:var(--bg-card); border:1px solid var(--border); border-radius:10px; overflow:hidden; position:relative; cursor:pointer; transition:border-color .15s; }
   .disc-card:hover{ border-color:var(--border-hover); }
   .disc-card img{ width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
   .disc-card .dc-title{ font-size:10px; padding:6px; line-height:1.3; }
@@ -492,12 +499,51 @@
   .ep-row .ertick svg{ width:13px; height:13px; }
   .ep-row.watched .ertick{ background:var(--status-green); color:var(--bg); }
 
-  /* Show Detail: poster over hero */
-  .ep-hero{ overflow:visible; }
-  .show-hero-poster{ position:absolute; left:14px; bottom:-34px; width:74px; height:104px; border-radius:8px;
-    object-fit:cover; background:var(--bg-card); border:2px solid var(--bg); box-shadow:0 4px 10px rgba(0,0,0,.35); }
-  #showDetailTitle{ font-size:19px; margin:0 0 4px 88px; min-height:20px; }
-  .detail-native{ margin:0 0 14px 88px; font-size:12px; color:var(--fg-dim); font-style:italic; }
+  /* Show Detail: persistent topbar (close/menu stay in the same place
+     before and after scrolling; the title fades in once the banner
+     beneath it has scrolled out of view, and its background solidifies
+     from transparent-over-art to the app's normal panel color). */
+  .sd-topbar{ position:relative; z-index:15; flex:0 0 auto; display:flex; align-items:center; gap:10px;
+    padding:14px; background:transparent; transition:background-color .2s ease, border-color .2s ease;
+    border-bottom:1px solid transparent; }
+  .sd-topbar.scrolled{ background:var(--bg); border-bottom-color:var(--border); }
+  .sd-topbar-btn{ flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:rgba(13,17,23,.7);
+    border:1px solid rgba(255,255,255,.1); color:var(--fg); cursor:pointer; display:flex;
+    align-items:center; justify-content:center; transition:background-color .2s ease; }
+  .sd-topbar-btn svg{ width:17px; height:17px; }
+  .sd-topbar.scrolled .sd-topbar-btn{ background:var(--bg-card); }
+  .sd-topbar-title{ flex:1; min-width:0; font-family:var(--font-heading); font-size:14px; font-weight:600;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; opacity:0; transition:opacity .2s ease; }
+  .sd-topbar.scrolled .sd-topbar-title{ opacity:1; }
+  .sd-topbar .action-menu{ top:48px; }
+
+  /* Show Detail: hero banner with title/meta/progress overlaid at the
+     bottom, matching a large-poster reference layout but restyled with
+     AniTrack's own palette (no match-% badge — numerical progress stays
+     the primary indicator per the app's design guide). */
+  .sd-scroll{ padding:0; }
+  .sd-hero{ position:relative; height:230px; background-size:cover; background-position:center;
+    background-color:var(--bg-card); background-repeat:no-repeat; flex:0 0 auto; }
+  .sd-hero-scrim{ position:absolute; inset:0;
+    background:linear-gradient(180deg, rgba(13,17,23,0) 0%, rgba(13,17,23,.25) 55%, rgba(13,17,23,.95) 100%); }
+  .sd-hero-content{ position:absolute; left:16px; right:16px; bottom:16px; }
+  #showDetailTitle{ font-size:21px; line-height:1.25; margin:0 0 4px; color:#fff; min-height:20px; }
+  .detail-native{ margin:0 0 4px; font-size:12px; color:rgba(242,245,247,.68); font-style:italic; }
+  .sd-progress{ display:flex; align-items:center; gap:10px; margin-top:8px; }
+  .sd-progress-num{ font-size:12.5px; font-weight:600; color:#fff; white-space:nowrap; flex:0 0 auto; }
+  .sd-progress-bar{ flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,.25); overflow:hidden; }
+  .sd-progress-bar > div{ height:100%; background:var(--accent); }
+
+  /* Show Detail: tabs pin right under the topbar once the banner scrolls
+     past — reuses the app's shared .tab component but with an underline
+     treatment instead of the pill style, scoped to this page only. */
+  .sd-tabs{ position:sticky; top:0; z-index:10; background:var(--bg); border-bottom:1px solid var(--border);
+    padding:10px 16px 0; margin:0; gap:0; }
+  .sd-tabs .tab{ background:none; border:none; border-radius:0; padding:6px 4px 12px; margin-right:22px;
+    font-size:13px; font-weight:600; color:var(--fg-faint); border-bottom:2px solid transparent; }
+  .sd-tabs .tab.active{ color:var(--fg); background:none; border-color:var(--accent); }
+  .sd-tabs .tab:not(.active):hover{ color:var(--fg-dim); border-color:transparent; }
+  .sd-content{ padding:16px; }
 
   /* Show Detail: key/value meta grid (studio, language, status, years, etc.) */
   .detail-meta-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; margin-bottom:16px; }
@@ -540,7 +586,10 @@
 <header>
   <div class="headrow">
     <div class="brand">ANITRACK</div>
-    <span class="dot" id="netdot" title="Online status"></span>
+    <button class="notif-bell" id="notifBellBtn" aria-label="Notifications">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span class="notif-badge" id="notifBadge" hidden></span>
+    </button>
   </div>
   <div class="tabs" id="tabs"></div>
 </header>
@@ -633,26 +682,34 @@
 
 <!-- show detail overlay -->
 <div class="overlay" id="showDetailOverlay">
-  <div class="ep-hero" id="showHero">
-    <button class="ep-hero-close" id="closeShowDetail" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-    <button class="ep-hero-menu" id="showMenuBtn" aria-label="More actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+  <div class="sd-topbar" id="sdTopbar">
+    <button class="sd-topbar-btn" id="closeShowDetail" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <span class="sd-topbar-title" id="sdTopbarTitle"></span>
+    <button class="sd-topbar-btn" id="showMenuBtn" aria-label="More actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
     <div class="action-menu" id="showActionMenu">
       <button class="action-menu-item" id="showActionEdit">Edit Tracking</button>
       <button class="action-menu-item danger-text" id="showActionRemove">Remove from List</button>
     </div>
-    <img class="show-hero-poster" id="showHeroPoster" alt="" />
   </div>
-  <div class="ov-body" style="padding-top:16px;">
-    <h2 id="showDetailTitle"></h2>
-    <div class="detail-native" id="showDetailNative" style="display:none;"></div>
-    <div class="tabs" id="showDetailTabs" style="padding:8px 0 14px;">
+  <div class="ov-body sd-scroll" id="showDetailScroll" style="padding:0;">
+    <div class="sd-hero" id="showHero">
+      <div class="sd-hero-scrim"></div>
+      <div class="sd-hero-content">
+        <h2 id="showDetailTitle"></h2>
+        <div class="detail-native" id="showDetailNative" style="display:none;"></div>
+        <div class="sd-progress" id="sdProgress"></div>
+      </div>
+    </div>
+    <div class="tabs sd-tabs" id="showDetailTabs">
       <button class="tab active" data-sdt="about">About</button>
       <button class="tab" data-sdt="episodes">Episodes</button>
       <button class="tab" data-sdt="journal">Journal</button>
     </div>
-    <div id="showDetailAbout"></div>
-    <div id="showDetailEpisodes" style="display:none;"></div>
-    <div id="showDetailJournal" style="display:none;"></div>
+    <div class="sd-content">
+      <div id="showDetailAbout"></div>
+      <div id="showDetailEpisodes" style="display:none;"></div>
+      <div id="showDetailJournal" style="display:none;"></div>
+    </div>
   </div>
 </div>
 
@@ -877,6 +934,7 @@
     timeline.sort((a,b) => b.timestamp - a.timestamp);
     if(timeline.length > TIMELINE_MAX) timeline.length = TIMELINE_MAX;
     saveTimeline();
+    updateNotifBell();
     if(!entry.silent) maybeFireNotification(full);
     return true;
   }
@@ -888,17 +946,11 @@
   }
 
   // ---------- daily anime wisdom ----------
-  // Deliberately minimal: the Daily Wisdom dashboard widget itself is a
-  // separate, not-yet-built roadmap item (FEATURE_ROADMAP Phase 4). This is
-  // just enough — a small local quote set and a lightweight overlay — for
-  // the "Daily Wisdom" notification to have something real to open, rather
-  // than pointing at a feature that doesn't exist yet.
   // `id` matches the reference design's bottom-left quote counter (001,
-  // 002...). character_avatar_url / background_url are left undefined —
-  // no real art ships with a static single-file app with no asset
-  // pipeline; the widget derives a generated monogram + gradient from the
-  // character/series text instead (see avatarFor/gradientFor). Swapping in
-  // real URLs later needs no shape change, just non-empty values here.
+  // 002...). There's no bundled art for the background scene, so gradientFor()
+  // derives one from the quote id; the character avatar is fetched lazily
+  // from AniList by name (see fetchWisdomAvatar) and falls back to a
+  // generated monogram (avatarFor/avatarColorFor) while loading or offline.
   const WISDOM_QUOTES = [
     { id:1, quote:"A lesson without pain is meaningless.", character:"Edward Elric", series:"Fullmetal Alchemist: Brotherhood" },
     { id:2, quote:"If you don't take risks, you can't create a future.", character:"Monkey D. Luffy", series:"One Piece" },
@@ -958,6 +1010,28 @@
     for(let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
     return AVATAR_HUES[hash % AVATAR_HUES.length];
   }
+
+  // Real character portraits, pulled lazily from AniList (the same source
+  // already used for every anime cover in the app) and cached by name so
+  // each character is only ever fetched once. The monogram above is the
+  // instant, always-available fallback while a portrait is loading, missing,
+  // or unreachable offline.
+  const WISDOM_AVATAR_KEY = "anitrack_wisdom_avatars_v1";
+  const wisdomAvatarCache = (() => { try{ return JSON.parse(localStorage.getItem(WISDOM_AVATAR_KEY)) || {}; }catch(e){ return {}; } })();
+  function saveWisdomAvatarCache(){ localStorage.setItem(WISDOM_AVATAR_KEY, JSON.stringify(wisdomAvatarCache)); }
+  const WISDOM_CHARACTER_QUERY = `query ($search: String) { Character(search: $search) { image { medium } } }`;
+  async function fetchWisdomAvatar(character){
+    if(wisdomAvatarCache[character]) return wisdomAvatarCache[character];
+    if(!navigator.onLine) return null;
+    try{
+      const data = await anilistQuery(WISDOM_CHARACTER_QUERY, { search: character });
+      const url = data.Character && data.Character.image && data.Character.image.medium;
+      if(!url) return null;
+      wisdomAvatarCache[character] = url;
+      saveWisdomAvatarCache();
+      return url;
+    }catch(e){ return null; }
+  }
   // Keeps the widget's vertical side text (a tight column at fixed height)
   // from overflowing on long series names like "Fullmetal Alchemist:
   // Brotherhood" — the full name is never hidden, since it's always shown
@@ -1013,6 +1087,19 @@
           </div>
         </div>
       </div>`;
+
+    const avatarEl = wrap.querySelector(".ww-avatar");
+    const cachedAvatar = wisdomAvatarCache[q.character];
+    if(cachedAvatar){
+      avatarEl.style.background = "none";
+      avatarEl.innerHTML = `<img src="${cachedAvatar}" alt="" />`;
+    }else{
+      fetchWisdomAvatar(q.character).then(url => {
+        if(!url || !document.body.contains(avatarEl)) return;
+        avatarEl.style.background = "none";
+        avatarEl.innerHTML = `<img src="${url}" alt="" />`;
+      });
+    }
 
     wrap.querySelector("#wisdomRefreshBtn").addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1258,12 +1345,13 @@
     if(timeline.some(e => !e.read)){
       timeline.forEach(e => { e.read = true; });
       saveTimeline();
+      updateNotifBell();
     }
   }
   function closeTimelineOverlay(){
     timelineOverlayOpen = false;
     $("#timelineOverlay").classList.remove("open");
-    updateNotifWidget();
+    updateNotifBell();
   }
   $("#closeTimeline").addEventListener("click", closeTimelineOverlay);
   $("#closeWisdom").addEventListener("click", () => $("#wisdomOverlay").classList.remove("open"));
@@ -1278,22 +1366,13 @@
     }
   }
 
-  function buildNotifWidgetBlock(){
-    const wrap = document.createElement("div");
-    wrap.className = "feed-section";
-    const recent = timeline.slice(0, 3);
-    if(!recent.length) return wrap;
+  function updateNotifBell(){
     const unread = timeline.filter(e => !e.read).length;
-    wrap.innerHTML = `
-      <div class="cal-widget">
-        <div class="cw-title">🔔 Notifications${unread ? ` (${unread})` : ''}</div>
-        <div class="notif-widget-list">${recent.map(e => `<div class="notif-widget-item">${escapeHtml(e.title)}</div>`).join('')}</div>
-        <button class="btn ghost notif-view-all" style="width:100%; margin-top:10px;">View All</button>
-      </div>`;
-    wrap.querySelector(".notif-view-all").addEventListener("click", openTimelineOverlay);
-    return wrap;
+    const badge = $("#notifBadge");
+    if(unread > 0){ badge.textContent = unread > 99 ? "99+" : String(unread); badge.hidden = false; }
+    else{ badge.hidden = true; }
   }
-  function updateNotifWidget(){ render(); }
+  $("#notifBellBtn").addEventListener("click", openTimelineOverlay);
 
   // ---------- toast ----------
   let toastTimer = null;
@@ -1306,10 +1385,7 @@
   }
 
   // ---------- online status ----------
-  function updateNetDot(){ $("#netdot").classList.toggle("off", !navigator.onLine); }
-  updateNetDot();
-  window.addEventListener("online", () => { updateNetDot(); toast("Back online — syncing…"); refreshAiring(); });
-  window.addEventListener("offline", updateNetDot);
+  window.addEventListener("online", () => { toast("Back online — syncing…"); refreshAiring(); });
 
   // ---------- notification permission ----------
   // The old single Episode Alerts on/off row now opens the full Notification
@@ -2264,7 +2340,6 @@
     if(!active.length){
       listEl.appendChild(buildTodaysCalendarBlock(list));
       listEl.appendChild(buildReleaseCalendarBlock(list));
-      listEl.appendChild(buildNotifWidgetBlock());
       listEl.appendChild(buildWisdomWidgetBlock());
       const emptyDiv = document.createElement("div");
       emptyDiv.className = "empty";
@@ -2296,7 +2371,6 @@
 
     listEl.appendChild(buildTodaysCalendarBlock(list));
     listEl.appendChild(buildReleaseCalendarBlock(list));
-    listEl.appendChild(buildNotifWidgetBlock());
     listEl.appendChild(buildWisdomWidgetBlock());
 
     if(stale.length){
@@ -2497,6 +2571,20 @@
   let showDetailTab = "about";
   let showDetailCountdownTimer = null;
 
+  // Numbers stay the primary progress indicator (never replaced by the bar
+  // alone) — this mirrors the "N / cap" convention the edit sheet's own
+  // stepper labels already use, just promoted to a header-level readout.
+  function buildShowDetailProgress(item){
+    const cap = capFor(item);
+    if(item.status === "completed" && !cap) return "";
+    const unit = item.type === "anime" ? "Episode" : "Chapter";
+    const label = `${unit} ${item.progress}${cap ? ` / ${cap}` : ""}`;
+    const pct = cap ? Math.min(100, Math.round((item.progress / cap) * 100)) : (item.status === "completed" ? 100 : 0);
+    return `
+      <div class="sd-progress-num">${escapeHtml(label)}</div>
+      <div class="sd-progress-bar"><div style="width:${pct}%"></div></div>`;
+  }
+
   function openShowDetail(item){
     currentShowItem = item;
     showDetailTab = "about";
@@ -2504,17 +2592,25 @@
     $("#showDetailAbout").style.display = "";
     $("#showDetailEpisodes").style.display = "none";
     $("#showDetailJournal").style.display = "none";
-    $("#showDetailTitle").textContent = item.english || item.romaji;
+    const titleText = item.english || item.romaji;
+    $("#showDetailTitle").textContent = titleText;
+    $("#sdTopbarTitle").textContent = titleText;
     $("#showDetailNative").style.display = "none";
     $("#showActionMenu").classList.remove("open");
+    $("#sdProgress").innerHTML = buildShowDetailProgress(item);
     const hero = item.bannerImage || item.customCover || item.cover || "";
     $("#showHero").style.backgroundImage = hero ? `url('${hero}')` : "none";
-    const poster = $("#showHeroPoster");
-    const posterSrc = item.customCover || item.cover || "";
-    if(posterSrc){ poster.src = posterSrc; poster.style.display = ""; } else { poster.style.display = "none"; }
+    $("#showDetailScroll").scrollTop = 0;
+    $("#sdTopbar").classList.remove("scrolled");
     renderShowDetailAbout(item);
     showDetailOverlay.classList.add("open");
   }
+  // The topbar starts transparent-over-art (matching the banner) and only
+  // solidifies with the title once the banner has scrolled out of view —
+  // one listener reused across every open rather than rebound each time.
+  $("#showDetailScroll").addEventListener("scroll", (e) => {
+    $("#sdTopbar").classList.toggle("scrolled", e.target.scrollTop > 150);
+  });
   function closeShowDetail(){
     showDetailOverlay.classList.remove("open");
     $("#showActionMenu").classList.remove("open");
@@ -3978,6 +4074,19 @@
         const btn = card.querySelector(".dc-add");
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`; btn.classList.add("added");
       });
+      // Show Detail only persists progress/journal edits for items actually
+      // in `list`, so opening it for a not-yet-added card means silently
+      // adding it first (same precedent as the search-result rows below).
+      card.addEventListener("click", () => {
+        let existing = itemById(m.id, mode);
+        if(!existing){
+          addToList(m, mode);
+          existing = itemById(m.id, mode);
+          const btn = card.querySelector(".dc-add");
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`; btn.classList.add("added");
+        }
+        openShowDetail(existing);
+      });
       grid.appendChild(card);
     });
   }
@@ -4147,7 +4256,7 @@
     scanStatisticsMilestones();
     scanContinueReminders();
     scanWatchLaterReminders();
-    updateNotifWidget();
+    updateNotifBell();
     if(timelineOverlayOpen) renderTimeline();
   }
 
@@ -4164,6 +4273,7 @@
   // ---------- initial paint ----------
   renderTabs();
   render();
+  updateNotifBell();
   scanForTimelineEvents();
   if(navigator.onLine) refreshAiring();
   setInterval(refreshAiring, 15 * 60 * 1000);
