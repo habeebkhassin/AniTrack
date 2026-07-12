@@ -3,8 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0D1117" />
+<meta name="theme-color" content="#0D1117" id="themeColorMeta" />
 <title>AniTrack</title>
+<script>
+  // Sets data-theme before the stylesheet below ever paints, so a saved
+  // "light" preference doesn't flash dark for one frame on load/reload.
+  (function(){
+    try{
+      var pref = localStorage.getItem("anitrack_theme") || "dark";
+      var effective = pref === "system"
+        ? (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
+        : pref;
+      if(effective === "light") document.documentElement.setAttribute("data-theme", "light");
+    }catch(e){}
+  })();
+</script>
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon-192.png" />
 <link rel="apple-touch-icon" href="icon-192.png" />
@@ -33,6 +46,52 @@
        exception to the app's normal Space Grotesk/Inter system, matching
        the widget's own reference design rather than the rest of the UI. */
     --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Roboto Mono", monospace;
+    /* Neutral checkbox affordance (.tick/.ertick) — a light circle in dark
+       mode needs no border to read against a dark card; the light-mode
+       override below adds one so it doesn't wash out against a white card. */
+    --tick-bg:#E9E9EC;
+    --tick-fg:#7A7F8C;
+    --tick-border: transparent;
+    /* Daily Wisdom scene: the "ink" used for text sitting directly on the
+       gradient background/photo, plus the vignette scrim over it. Kept
+       separate from --fg/--bg because the scene's own background flips
+       between dark and light independently (see WISDOM_GRADIENTS/
+       WISDOM_GRADIENTS_LIGHT) and needs matching ink, not the page's. */
+    --ww-ink-rgb: 242,245,247;
+    --ww-scrim-1: rgba(8,10,16,.25);
+    --ww-scrim-2: rgba(8,10,16,.7);
+    --ww-scrim-1-hover: rgba(8,10,16,.15);
+    --ww-scrim-2-hover: rgba(8,10,16,.6);
+  }
+  /* Light theme — same structural roles as the dark palette above (page
+     background is the darkest/dimmest surface, cards are the brightest),
+     just inverted. Every text/fill pairing here was checked against the
+     WCAG AA 4.5:1 minimum (see contrast notes in PROJECT_STATUS.md) rather
+     than eyeballed, since colors that read fine on a dark page often don't
+     survive the swap to a light one. */
+  :root[data-theme="light"]{
+    --bg:#F6F8FA;
+    --bg-alt:#EDF0F3;
+    --bg-card:#FFFFFF;
+    --bg-card-hi:#F0F2F5;
+    --border:#D8DEE4;
+    --border-hover:#B9C1C9;
+    --fg:#1F2328;
+    --fg-dim:#57606A;
+    --fg-faint:#636D78;
+    --accent:#235DC7;
+    --amber:#9A6700;
+    --status-green:#1A7F37;
+    --status-orange:#A65500;
+    --status-red:#CF222E;
+    --tick-bg:#EDF0F3;
+    --tick-fg:#57606A;
+    --tick-border: var(--border);
+    --ww-ink-rgb: 31,35,40;
+    --ww-scrim-1: rgba(255,255,255,.05);
+    --ww-scrim-2: rgba(255,255,255,.4);
+    --ww-scrim-1-hover: rgba(255,255,255,.02);
+    --ww-scrim-2-hover: rgba(255,255,255,.28);
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--fg);
@@ -99,6 +158,27 @@
   .more-row:active{ transform:scale(0.99); }
   .more-row .chev{ color:var(--fg-dim); font-weight:400; font-size:12px; }
 
+  /* Appearance: Light/Dark/System theme picker, More tab */
+  .theme-switch{ display:flex; gap:12px; margin:2px 0 8px; }
+  .theme-opt{ flex:1; background:none; border:none; padding:0; cursor:pointer; display:flex;
+    flex-direction:column; align-items:center; gap:8px; color:var(--fg-dim); font-family:var(--font-body); font-size:12px; }
+  .theme-swatch{ width:100%; aspect-ratio:1/0.72; border-radius:12px; border:2px solid var(--border);
+    position:relative; overflow:hidden; transition:border-color .15s; }
+  .theme-opt:hover .theme-swatch{ border-color:var(--border-hover); }
+  .theme-opt.active .theme-swatch{ border-color:var(--accent); }
+  .theme-opt.active .theme-opt-label{ color:var(--fg); font-weight:600; }
+  .theme-swatch.light{ background:#FFFFFF; }
+  .theme-swatch.light .ts-aa{ color:#1F2328; }
+  .theme-swatch.dark{ background:#0D1117; }
+  .theme-swatch.dark .ts-aa{ color:#F2F5F7; }
+  .theme-swatch.system{ background:linear-gradient(90deg, #0D1117 50%, #FFFFFF 50%); }
+  .theme-swatch.system .ts-aa{ color:#F2F5F7; left:14%; }
+  .ts-aa{ position:absolute; bottom:8px; left:12px; font-family:var(--font-heading); font-weight:700; font-size:15px; }
+  .theme-check{ position:absolute; bottom:7px; right:7px; width:18px; height:18px; border-radius:50%;
+    background:#1F2328; color:#fff; display:none; align-items:center; justify-content:center; }
+  .theme-check svg{ width:10px; height:10px; }
+  .theme-opt.active .theme-check{ display:flex; }
+
   .feed-section{ margin-bottom:24px; }
   .feed-pill-row{ margin:4px 2px 12px; }
   .feed-pill{ display:inline-block; background:var(--bg-card-hi); color:var(--fg); font-size:10px; font-weight:600;
@@ -154,20 +234,20 @@
 
   .ww-scene{ position:relative; padding:16px 30px 14px 18px; min-height:192px; display:flex; flex-direction:column;
     background-size:cover; background-position:center; cursor:pointer; }
-  .ww-scene::before{ content:""; position:absolute; inset:0; background:linear-gradient(175deg, rgba(8,10,16,.25), rgba(8,10,16,.7)); pointer-events:none; transition:background .2s; }
-  .ww-scene:hover::before{ background:linear-gradient(175deg, rgba(8,10,16,.15), rgba(8,10,16,.6)); }
+  .ww-scene::before{ content:""; position:absolute; inset:0; background:linear-gradient(175deg, var(--ww-scrim-1), var(--ww-scrim-2)); pointer-events:none; transition:background .2s; }
+  .ww-scene:hover::before{ background:linear-gradient(175deg, var(--ww-scrim-1-hover), var(--ww-scrim-2-hover)); }
   .ww-scene > *{ position:relative; z-index:1; }
   .ww-scene:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; }
 
   .ww-scene-top{ display:flex; align-items:flex-start; justify-content:flex-end; gap:9px; margin-bottom:8px; }
-  .ww-date{ font-size:9.5px; letter-spacing:1.2px; color:rgba(242,245,247,.68); padding-top:5px; }
+  .ww-date{ font-size:9.5px; letter-spacing:1.2px; color:rgba(var(--ww-ink-rgb),.68); padding-top:5px; }
   .ww-avatar{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-mono); font-weight:700; font-size:13px; color:var(--fg); flex:0 0 auto; overflow:hidden;
+    font-family:var(--font-mono); font-weight:700; font-size:13px; color:#fff; flex:0 0 auto; overflow:hidden;
     clip-path:polygon(15% 0,85% 0,100% 15%,100% 85%,85% 100%,15% 100%,0 85%,0 15%); }
   .ww-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
 
   .ww-dots{ position:absolute; left:18px; top:52px; display:flex; flex-direction:column; gap:5px; }
-  .ww-dots span{ width:3px; height:3px; background:rgba(242,245,247,.4); }
+  .ww-dots span{ width:3px; height:3px; background:rgba(var(--ww-ink-rgb),.4); }
 
   .ww-quote-block{ flex:1; padding-left:16px; display:flex; flex-direction:column; justify-content:center; min-height:64px; }
   .ww-quote-mark{ font-size:24px; line-height:1; color:var(--accent); opacity:.75; font-family:Georgia,serif; margin-bottom:2px; }
@@ -175,13 +255,13 @@
 
   .ww-vertical{ position:absolute; right:9px; top:42px; bottom:26px; display:flex; flex-direction:row-reverse; align-items:center; gap:5px; }
   .ww-vertical span{ writing-mode:vertical-rl; text-orientation:mixed; white-space:nowrap; }
-  .ww-vc{ font-size:8px; font-weight:700; letter-spacing:1px; color:rgba(242,245,247,.75); }
-  .ww-vs{ font-size:7.5px; letter-spacing:1px; color:rgba(242,245,247,.45); }
+  .ww-vc{ font-size:8px; font-weight:700; letter-spacing:1px; color:rgba(var(--ww-ink-rgb),.75); }
+  .ww-vs{ font-size:7.5px; letter-spacing:1px; color:rgba(var(--ww-ink-rgb),.45); }
 
   .ww-bottom-row{ display:flex; align-items:center; gap:8px; margin-top:10px; padding-left:16px; }
-  .ww-qid{ font-size:9px; color:rgba(242,245,247,.4); flex:0 0 auto; }
+  .ww-qid{ font-size:9px; color:rgba(var(--ww-ink-rgb),.4); flex:0 0 auto; }
   .ww-series-line{ flex:1; text-align:center; padding-right:16px; font-size:8.5px; letter-spacing:1px;
-    color:rgba(242,245,247,.6); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    color:rgba(var(--ww-ink-rgb),.6); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ww-pixel-accent{ display:grid; grid-template-columns:repeat(2,4px); gap:2px; flex:0 0 auto; align-self:center; }
   .ww-pixel-accent i{ width:4px; height:4px; background:var(--accent); opacity:.6; display:block; }
 
@@ -246,8 +326,8 @@
   .star{ color:var(--amber); font-size:13px; flex:0 0 auto; display:flex; }
   .star svg{ width:13px; height:13px; }
   .tick{ position:absolute; right:12px; top:50%; transform:translateY(-50%); width:44px; height:44px;
-    border-radius:50%; background:#E9E9EC; border:none; display:flex; z-index:2;
-    align-items:center; justify-content:center; cursor:pointer; color:#7A7F8C; flex:0 0 auto; transition:transform .15s; }
+    border-radius:50%; background:var(--tick-bg); border:1px solid var(--tick-border); display:flex; z-index:2;
+    align-items:center; justify-content:center; cursor:pointer; color:var(--tick-fg); flex:0 0 auto; transition:transform .15s; }
   .tick svg{ width:18px; height:18px; }
   .tick:active{ transform:translateY(-50%) scale(0.93); }
 
@@ -494,8 +574,8 @@
   .ep-row .ernum{ font-size:12px; font-weight:600; width:34px; flex:0 0 auto; font-family:var(--font-heading); }
   .ep-row .ertitle{ flex:1; font-size:12px; color:var(--fg-dim); }
   .ep-row.watched .ertitle{ color:var(--fg); }
-  .ep-row .ertick{ width:26px; height:26px; border-radius:50%; background:#E9E9EC; color:#7A7F8C; border:none;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
+  .ep-row .ertick{ width:26px; height:26px; border-radius:50%; background:var(--tick-bg); color:var(--tick-fg);
+    border:1px solid var(--tick-border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
   .ep-row .ertick svg{ width:13px; height:13px; }
   .ep-row.watched .ertick{ background:var(--status-green); color:var(--bg); }
 
@@ -630,6 +710,22 @@
     <div class="more-row" id="moreImportBtn"><span>Import from TV Time</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
     <div class="more-row" id="moreSequelsBtn"><span>Find Missing Sequels</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
     <div class="more-row" id="moreNotifyBtn"><span>Notifications</span><span class="chev" id="moreNotifyStatus">Off</span></div>
+
+    <div class="section-title">Appearance</div>
+    <div class="theme-switch" id="themeSwitch">
+      <button class="theme-opt" data-theme-opt="light" aria-pressed="false">
+        <span class="theme-swatch light"><span class="ts-aa">Aa</span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+        <span class="theme-opt-label">Light</span>
+      </button>
+      <button class="theme-opt" data-theme-opt="dark" aria-pressed="false">
+        <span class="theme-swatch dark"><span class="ts-aa">Aa</span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+        <span class="theme-opt-label">Dark</span>
+      </button>
+      <button class="theme-opt" data-theme-opt="system" aria-pressed="false">
+        <span class="theme-swatch system"><span class="ts-aa">Aa</span><span class="theme-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span></span>
+        <span class="theme-opt-label">System</span>
+      </button>
+    </div>
   </div>
 </main>
 
@@ -855,6 +951,37 @@
   // app's own logic below, which is the only thing that should control it.
   if("scrollRestoration" in history) history.scrollRestoration = "manual";
 
+  // ---------- theme (light / dark / system) ----------
+  // The <head> script already set data-theme before first paint to avoid a
+  // flash of the wrong theme; this is the reactive half — it keeps the
+  // Appearance picker's selected state in sync, updates the browser chrome
+  // color, and (for "system") follows OS theme changes made while the app
+  // is already open.
+  const THEME_KEY = "anitrack_theme";
+  const systemThemeQuery = matchMedia("(prefers-color-scheme: light)");
+  function loadThemePref(){ return localStorage.getItem(THEME_KEY) || "dark"; }
+  function effectiveTheme(pref){ return pref === "system" ? (systemThemeQuery.matches ? "light" : "dark") : pref; }
+  function applyTheme(){
+    const pref = loadThemePref();
+    const effective = effectiveTheme(pref);
+    document.documentElement.setAttribute("data-theme", effective === "light" ? "light" : "dark");
+    const meta = document.getElementById("themeColorMeta");
+    if(meta) meta.content = effective === "light" ? "#F6F8FA" : "#0D1117";
+    document.querySelectorAll(".theme-opt").forEach(btn => {
+      const isActive = btn.dataset.themeOpt === pref;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-pressed", String(isActive));
+    });
+  }
+  document.querySelectorAll(".theme-opt").forEach(btn => {
+    btn.addEventListener("click", () => {
+      localStorage.setItem(THEME_KEY, btn.dataset.themeOpt);
+      applyTheme();
+    });
+  });
+  systemThemeQuery.addEventListener("change", () => { if(loadThemePref() === "system") applyTheme(); });
+  applyTheme();
+
   const STORAGE_KEY = "anitrack_list_v2";
   const API = "https://graphql.anilist.co";
   const $ = (sel) => document.querySelector(sel);
@@ -990,7 +1117,10 @@
   // per-quote background photo (no asset pipeline in a static single-file
   // app, and no legitimate local source of real anime screenshots) — picked
   // deterministically per quote id so the same quote always reads the same
-  // "scene," not reshuffled on every render.
+  // "scene," not reshuffled on every render. WISDOM_GRADIENTS_LIGHT is the
+  // same five "moods," same index order, just lightened for light mode —
+  // the dark set alone would leave a jarring dark rectangle in an otherwise
+  // light-mode page.
   const WISDOM_GRADIENTS = [
     "linear-gradient(160deg, #0b0f1a 0%, #131a2b 55%, #1c1440 100%)",
     "linear-gradient(160deg, #0c1210 0%, #10201c 55%, #123024 100%)",
@@ -998,12 +1128,24 @@
     "linear-gradient(160deg, #0b1420 0%, #101f33 55%, #143654 100%)",
     "linear-gradient(160deg, #140f08 0%, #241a0d 55%, #3a2710 100%)"
   ];
-  function gradientFor(quote){ return WISDOM_GRADIENTS[quote.id % WISDOM_GRADIENTS.length]; }
+  const WISDOM_GRADIENTS_LIGHT = [
+    "linear-gradient(160deg, #eaeefc 0%, #e3e8fa 55%, #dfd5f5 100%)",
+    "linear-gradient(160deg, #e7f3ef 0%, #deeee8 55%, #d3ebdd 100%)",
+    "linear-gradient(160deg, #fbeaf0 0%, #f7e2ec 55%, #f2d9e8 100%)",
+    "linear-gradient(160deg, #e6effa 0%, #dee9f8 55%, #d2e5f7 100%)",
+    "linear-gradient(160deg, #fbf4e7 0%, #f8eeda 55%, #f2e1c4 100%)"
+  ];
+  function gradientFor(quote){
+    const isLight = document.documentElement.getAttribute("data-theme") === "light";
+    const set = isLight ? WISDOM_GRADIENTS_LIGHT : WISDOM_GRADIENTS;
+    return set[quote.id % set.length];
+  }
 
-  // First four reuse the app's existing accent/status colors (single source
-  // of truth); the last two are bespoke additions purely for avatar
-  // variety, with no equivalent design-system token.
-  const AVATAR_HUES = ["var(--accent)", "var(--amber)", "var(--status-green)", "var(--status-red)", "#8B7FE8", "#4FBFC0"];
+  // Fixed, theme-independent fills for the avatar monogram fallback — kept
+  // separate from --accent/--status-* because those flip to darker values
+  // in light mode for contrast against a light page, which would then be
+  // too dark for the white monogram letter that sits on top of these.
+  const AVATAR_HUES = ["#2F5FCB", "#8A6000", "#1F7A3D", "#C0392B", "#6C5CE0", "#0D726D"];
   function avatarInitial(name){ return (name || "?").trim().charAt(0).toUpperCase(); }
   function avatarColorFor(name){
     let hash = 0;
