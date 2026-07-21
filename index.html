@@ -181,6 +181,7 @@
 
   .feed-section{ margin-bottom:24px; }
   .feed-pill-row{ margin:4px 2px 12px; }
+  .lazy-sentinel{ height:1px; }
   .feed-pill{ display:inline-block; background:var(--bg-card-hi); color:var(--fg); font-size:10px; font-weight:600;
     letter-spacing:.5px; padding:6px 14px; border-radius:999px; border:1px solid var(--border); }
   .feed-pill.dim{ background:var(--bg-alt); color:var(--fg-faint); }
@@ -341,6 +342,7 @@
     align-items:center; justify-content:center; cursor:pointer; color:var(--tick-fg); flex:0 0 auto; transition:transform .15s; }
   .tick svg{ width:18px; height:18px; }
   .tick:active{ transform:translateY(-50%) scale(0.93); }
+  .tick.disabled{ opacity:.4; cursor:default; }
 
   .swipe-action{ position:absolute; inset:0; z-index:0; background:var(--status-green); color:var(--bg);
     display:flex; align-items:center; gap:8px; padding-left:22px; font-size:12px; font-weight:600; }
@@ -555,6 +557,33 @@
   .ep-hero-close{ left:14px; }
   .ep-hero-menu{ right:14px; }
 
+  /* Episode/chapter detail modal — a bottom sheet over a dimmed backdrop
+     (matching the skip-ahead confirm dialog's pattern) rather than a full
+     page, so it reads as "a quick look" you can flick between rather than
+     navigation. epmodal-slider carries the swipe: dragging it (or tapping
+     the prev/next arrows, or Left/Right arrow keys) slides the current
+     episode's content out and the next/previous one in. */
+  .epmodal-overlay{ position:fixed; inset:0; z-index:52; display:none; align-items:flex-end; justify-content:center; }
+  .epmodal-overlay.open{ display:flex; }
+  .epmodal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); }
+  .epmodal-sheet{ position:relative; z-index:1; width:100%; max-width:480px; max-height:88vh; background:var(--bg);
+    border-radius:16px 16px 0 0; overflow:hidden; display:flex; flex-direction:column;
+    box-shadow:0 -10px 40px rgba(0,0,0,.5); animation:epmodal-up .22s ease; }
+  @keyframes epmodal-up{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
+  .epmodal-drag-handle{ position:absolute; top:8px; left:50%; transform:translateX(-50%); width:36px; height:4px;
+    border-radius:2px; background:rgba(255,255,255,.5); z-index:3; }
+  .epmodal-slider{ flex:1; overflow-y:auto; overflow-x:hidden; display:flex; flex-direction:column; touch-action:pan-y; }
+  .epmodal-slider .epmodal-body{ overflow-y:visible; flex:none; }
+  .epmodal-nav{ position:absolute; top:79px; z-index:3; width:32px; height:32px; border-radius:50%;
+    background:rgba(0,0,0,.45); border:none; color:#fff; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:opacity .15s, background .15s; }
+  .epmodal-nav:hover{ background:rgba(0,0,0,.65); }
+  .epmodal-nav.prev{ left:14px; }
+  .epmodal-nav.next{ right:14px; }
+  .epmodal-nav svg{ width:15px; height:15px; }
+  .epmodal-nav:disabled{ opacity:0; pointer-events:none; }
+  @media (prefers-reduced-motion: reduce){ .epmodal-sheet{ animation:none; } .epmodal-slider{ transition:none !important; } }
+
   .action-menu{ position:absolute; top:54px; right:14px; background:var(--bg-card); border:1px solid var(--border);
     border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.4); min-width:172px; overflow:hidden; z-index:5; display:none; }
   .action-menu.open{ display:block; }
@@ -603,6 +632,10 @@
     border:1px solid var(--tick-border); display:flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
   .ertick svg{ width:13px; height:13px; }
   .ep-row.watched .ertick, .ertick.done{ background:var(--status-green); color:var(--bg); }
+  .ep-row.tbd{ cursor:default; border-style:dashed; opacity:.55; }
+  .ep-row.tbd:hover{ border-color:var(--border); }
+  .ep-row.tbd .ertitle{ font-style:italic; }
+  .ertbd-label{ font-size:10px; font-weight:600; letter-spacing:.03em; color:var(--fg-faint); text-transform:uppercase; flex:0 0 auto; }
 
   /* Show Detail: multi-season grouping (Continue tracking carousel + one
      collapsible section per tracked season, reusing .detail-section) */
@@ -806,22 +839,30 @@
 </div>
 
 <!-- episode detail overlay -->
-<div class="overlay" id="episodeOverlay">
-  <div class="ep-hero" id="epHero">
-    <button class="ep-hero-close" id="closeEpisode" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
-  </div>
-  <div class="ov-body" style="padding-top:16px;">
-    <div class="title-pill" id="epShowPill"><span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
-    <div class="ep-big-detail" id="epBigLine"></div>
-    <div class="ep-sub-detail" id="epSubLine"></div>
-    <div class="ep-meta-row">
-      <span class="ep-meta-item" id="epStatusLine"></span>
-      <button class="tick static" id="epTickBtn" aria-label="Mark this episode watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+<div class="epmodal-overlay" id="episodeOverlay">
+  <div class="epmodal-backdrop" id="epModalBackdrop"></div>
+  <div class="epmodal-sheet" id="epModalSheet">
+    <div class="epmodal-drag-handle"></div>
+    <button class="epmodal-nav prev" id="epNavPrev" aria-label="Previous episode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="epmodal-nav next" id="epNavNext" aria-label="Next episode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    <div class="epmodal-slider" id="epModalSlider">
+      <div class="ep-hero" id="epHero">
+        <button class="ep-hero-close" id="closeEpisode" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="ov-body epmodal-body" style="padding-top:16px;">
+        <div class="title-pill" id="epShowPill"><span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span></div>
+        <div class="ep-big-detail" id="epBigLine"></div>
+        <div class="ep-sub-detail" id="epSubLine"></div>
+        <div class="ep-meta-row">
+          <span class="ep-meta-item" id="epStatusLine"></span>
+          <button class="tick static" id="epTickBtn" aria-label="Mark this episode watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+        </div>
+        <div class="section-title" id="epStreamingTitle" style="display:none;">Where to watch</div>
+        <div id="epStreamingLinks" class="stream-links"></div>
+        <div class="section-title">About the series</div>
+        <div class="ep-description" id="epDescription"></div>
+      </div>
     </div>
-    <div class="section-title" id="epStreamingTitle" style="display:none;">Where to watch</div>
-    <div id="epStreamingLinks" class="stream-links"></div>
-    <div class="section-title">About the series</div>
-    <div class="ep-description" id="epDescription"></div>
   </div>
 </div>
 
@@ -2259,6 +2300,7 @@
           newChapterEvents.push({ item, before: chaptersBefore, after: item.totalChapters });
         }
       });
+      reconcileCompletionStatus();
       saveList(); render();
       newEpisodeEvents.forEach(e => logNewEpisode(e.item, e.before, e.after));
       newChapterEvents.forEach(e => logNewChapter(e.item, e.before, e.after));
@@ -2304,6 +2346,62 @@
       return cap || null;
     }
     return null;
+  }
+
+  // The hard boundary tracking must respect: you can never mark something
+  // watched/read that hasn't actually released yet. `released` is how many
+  // episodes/chapters are confirmed to exist right now.
+  //
+  // Anime has a real release-schedule signal (nextAiringEpisode), so it's
+  // trusted over the total: a RELEASING show's `totalEpisodes` is often the
+  // *planned* final count, announced before every episode has aired, so
+  // using it directly would let you mark unaired episodes watched — the
+  // exact bug this exists to prevent. Only when there's no schedule signal
+  // at all (hiatus, not-yet-scheduled) do we fall back to progress+1, so
+  // forward progress is still possible one step at a time.
+  //
+  // Manga has no equivalent schedule field on AniList at all, ever — so
+  // `totalChapters`, when AniList has it, IS the best available "released"
+  // signal for an ongoing series (editors keep it roughly current), and is
+  // trusted directly rather than treated the same as "unknown".
+  //
+  // `tbd` is a small fixed number of non-interactive "coming soon"
+  // placeholder rows shown past `released`, only while the title is
+  // actively RELEASING — the same affordance TV Time uses — so the list
+  // doesn't just cut off mid-air without implying those can be marked watched.
+  const TBD_BUFFER = 3;
+  function releaseWindowFor(item){
+    let released;
+    if(item.type === "anime"){
+      const avail = availableCount(item);
+      released = avail !== null ? avail : item.progress + 1;
+    }else{
+      released = capFor(item) || item.progress + 1;
+    }
+    released = Math.max(released, item.progress);
+    return { released, tbd: item.mediaStatus === "RELEASING" ? TBD_BUFFER : 0 };
+  }
+
+  // Self-heals `status` for titles that are fully watched/read on a title
+  // AniList has fully released, but whose status field never got flipped to
+  // "completed" — e.g. progress was set directly in the edit sheet rather
+  // than via a tick. Without this, such a title stays classified as
+  // "watching"/"reading" and keeps showing on the Home dashboard even
+  // though there's nothing left of it to watch. Only ever heals forward
+  // into "completed", and only once the title itself is FINISHED (never
+  // force-completes something still RELEASING just because you're caught
+  // up to what's out so far).
+  function reconcileCompletionStatus(){
+    let changed = false;
+    list.forEach(item => {
+      if(item.status === "completed" || item.status === "dropped") return;
+      const cap = capFor(item);
+      if(cap && item.mediaStatus === "FINISHED" && item.progress >= cap){
+        item.status = "completed";
+        changed = true;
+      }
+    });
+    if(changed) saveList();
   }
 
   function computeBadges(item){
@@ -2616,6 +2714,42 @@
   // anything with a freshly-released episode regardless of how long it's
   // been), and "Haven't Watched For A While" (same active shows, but you
   // haven't touched them recently and nothing about them is fresh).
+  // Home dashboard sections (Watch Next / stale) can grow long for a big
+  // library, so they render one batch of cards at a time and load the next
+  // batch as a sentinel element near the bottom scrolls into view, instead
+  // of building every card up front. `lazyLoadObservers` is disconnected at
+  // the top of every render() so re-rendering never leaks observers still
+  // watching sentinels that innerHTML="" already tore out of the DOM.
+  const LAZY_BATCH_SIZE = 8;
+  let lazyLoadObservers = [];
+  function clearLazyObservers(){
+    lazyLoadObservers.forEach(o => o.disconnect());
+    lazyLoadObservers = [];
+  }
+  function renderLazyCardList(container, entries, buildCardFn){
+    if(!entries.length) return;
+    let index = 0;
+    const sentinel = document.createElement("div");
+    sentinel.className = "lazy-sentinel";
+    container.appendChild(sentinel);
+    function appendBatch(){
+      entries.slice(index, index + LAZY_BATCH_SIZE).forEach(entry => container.insertBefore(buildCardFn(entry), sentinel));
+      index = Math.min(index + LAZY_BATCH_SIZE, entries.length);
+      if(index >= entries.length){
+        observer.disconnect();
+        sentinel.remove();
+      }
+    }
+    const observer = new IntersectionObserver((obsEntries) => {
+      if(obsEntries[0].isIntersecting) appendBatch();
+    }, { rootMargin: "400px 0px" });
+    appendBatch();
+    if(index < entries.length){
+      lazyLoadObservers.push(observer);
+      observer.observe(sentinel);
+    }
+  }
+
   function renderHomeFeed(activeItems){
     const listEl = $("#list");
     const activeStatus = mode === "anime" ? "watching" : "reading";
@@ -2680,7 +2814,7 @@
     nextBlock.className = "feed-section";
     nextBlock.innerHTML = `<div class="feed-pill-row"><span class="feed-pill">Watch Next</span></div>`;
     if(watchNext.length){
-      watchNext.forEach(({item, isFresh}) => nextBlock.appendChild(buildCard(item, { fresh: isFresh })));
+      renderLazyCardList(nextBlock, watchNext, ({item, isFresh}) => buildCard(item, { fresh: isFresh }));
     }else{
       nextBlock.innerHTML += `<div class="hint">Nothing actively ${mode === "anime" ? "watching" : "reading"} right now.</div>`;
     }
@@ -2690,7 +2824,7 @@
       const staleBlock = document.createElement("div");
       staleBlock.className = "feed-section";
       staleBlock.innerHTML = `<div class="feed-pill-row"><span class="feed-pill">Haven't Watched For A While</span></div>`;
-      stale.forEach(({item}) => staleBlock.appendChild(buildCard(item, {})));
+      renderLazyCardList(staleBlock, stale, ({item}) => buildCard(item, {}));
       listEl.appendChild(staleBlock);
     }
 
@@ -2721,6 +2855,7 @@
   };
 
   function render(){
+    clearLazyObservers();
     const listEl = $("#list");
     const items = list.filter(x => x.type === mode);
 
@@ -2809,16 +2944,32 @@
   });
 
   // ---------- detail overlay ----------
-  // ---------- episode detail overlay ----------
+  // ---------- episode detail modal (swipeable between episodes) ----------
   const episodeOverlay = $("#episodeOverlay");
+  const epModalSlider = $("#epModalSlider");
   let currentEpisodeItem = null;
   let currentEpisodeNumber = 1;
+  let epSwipeActive = false;
+
+  // How far you're allowed to swipe/step: never below episode 1, never past
+  // the same released+TBD window the episode list itself shows — you can
+  // preview a "coming soon" placeholder this way, but not beyond it.
+  function episodeNavBounds(item){
+    return { min: 1, max: episodeTotalFor(item) };
+  }
 
   function openEpisodeDetail(item, epNumber){
     currentEpisodeItem = item;
     currentEpisodeNumber = Math.max(1, epNumber);
+    epModalSlider.style.transition = "none";
+    epModalSlider.style.transform = "translateX(0)";
+    epModalSlider.style.opacity = "1";
     renderEpisodeDetail();
     episodeOverlay.classList.add("open");
+  }
+  function closeEpisodeDetail(){
+    episodeOverlay.classList.remove("open");
+    render();
   }
 
   function renderEpisodeDetail(){
@@ -2847,9 +2998,12 @@
       $("#epSubLine").textContent = `Chapter ${epNumber}`;
     }
 
-    const watched = epNumber <= item.progress;
+    const { released } = releaseWindowFor(item);
+    const isTbd = epNumber > released;
+    const watched = !isTbd && epNumber <= item.progress;
     let statusText = watched ? "Watched" : "Not watched";
-    if(!watched && item.type === "anime" && item.nextAiringEpisode && item.nextAiringEpisode.episode === epNumber){
+    if(isTbd) statusText = "Not yet released";
+    if(!watched && !isTbd && item.type === "anime" && item.nextAiringEpisode && item.nextAiringEpisode.episode === epNumber){
       const d = new Date(item.nextAiringEpisode.airingAt * 1000);
       statusText = `Airs ${d.toLocaleDateString(undefined, { month:"short", day:"numeric" })}`;
     }
@@ -2857,8 +3011,10 @@
 
     const tickBtn = $("#epTickBtn");
     tickBtn.classList.toggle("tick-done", watched);
-    tickBtn.setAttribute("aria-label", `Mark this ${item.type === "anime" ? "episode" : "chapter"} ${watched ? "unwatched" : "watched"}`);
-    tickBtn.onclick = async () => {
+    tickBtn.classList.toggle("disabled", isTbd);
+    tickBtn.disabled = isTbd;
+    tickBtn.setAttribute("aria-label", isTbd ? "Not yet released" : `Mark this ${item.type === "anime" ? "episode" : "chapter"} ${watched ? "unwatched" : "watched"}`);
+    tickBtn.onclick = isTbd ? null : async () => {
       if(watched){ setProgressToEpisode(item, epNumber, false); render(); renderEpisodeDetail(); return; }
       if(await markWatchedWithConfirm(item, epNumber)){ render(); renderEpisodeDetail(); }
     };
@@ -2875,8 +3031,100 @@
     }
 
     $("#epDescription").textContent = item.description || "No synopsis available for this series.";
+
+    const { min, max } = episodeNavBounds(item);
+    $("#epNavPrev").disabled = epNumber <= min;
+    $("#epNavNext").disabled = epNumber >= max;
+    epModalSlider.scrollTop = 0;
   }
-  $("#closeEpisode").addEventListener("click", () => { episodeOverlay.classList.remove("open"); render(); });
+
+  // Slides the current episode's content out and the target episode's
+  // content in from the opposite edge — the DOM swap happens while the
+  // slider is off-screen so it's invisible, then it's released to animate
+  // back to center with the new content already in place.
+  function slideToEpisode(targetEp, direction){
+    if(!currentEpisodeItem) return;
+    const outX = direction === "left" ? "-100%" : "100%";
+    const inX = direction === "left" ? "100%" : "-100%";
+    epModalSlider.style.transition = "transform .18s ease, opacity .18s ease";
+    epModalSlider.style.transform = `translateX(${outX})`;
+    epModalSlider.style.opacity = "0";
+    setTimeout(() => {
+      currentEpisodeNumber = targetEp;
+      renderEpisodeDetail();
+      epModalSlider.style.transition = "none";
+      epModalSlider.style.transform = `translateX(${inX})`;
+      void epModalSlider.offsetWidth; // force reflow so the next line animates
+      epModalSlider.style.transition = "transform .18s ease, opacity .18s ease";
+      epModalSlider.style.transform = "translateX(0)";
+      epModalSlider.style.opacity = "1";
+    }, 180);
+  }
+  function goToEpisode(delta){
+    if(!currentEpisodeItem) return;
+    const { min, max } = episodeNavBounds(currentEpisodeItem);
+    const target = currentEpisodeNumber + delta;
+    if(target < min || target > max) return;
+    slideToEpisode(target, delta > 0 ? "left" : "right");
+  }
+
+  $("#epNavPrev").addEventListener("click", (e) => { e.stopPropagation(); goToEpisode(-1); });
+  $("#epNavNext").addEventListener("click", (e) => { e.stopPropagation(); goToEpisode(1); });
+  $("#closeEpisode").addEventListener("click", closeEpisodeDetail);
+  $("#epModalBackdrop").addEventListener("click", closeEpisodeDetail);
+  document.addEventListener("keydown", (e) => {
+    if(!episodeOverlay.classList.contains("open") || epSwipeActive) return;
+    if(e.key === "Escape") closeEpisodeDetail();
+    else if(e.key === "ArrowLeft") goToEpisode(-1);
+    else if(e.key === "ArrowRight") goToEpisode(1);
+  });
+
+  // Touch swipe: drag follows the finger 1:1 for direct-manipulation feel;
+  // a horizontal drag past the threshold commits to the next/previous
+  // episode, otherwise it snaps back. Vertical scrolling inside the sheet
+  // is left alone — only once a drag reads as clearly horizontal do we
+  // take over and suppress the scroll.
+  const EP_SWIPE_THRESHOLD = 60;
+  let epTouchStartX = 0, epTouchStartY = 0, epTouchDeltaX = 0, epTouchAxisLocked = null;
+  epModalSlider.addEventListener("touchstart", (e) => {
+    if(e.touches.length !== 1) return;
+    epTouchStartX = e.touches[0].clientX;
+    epTouchStartY = e.touches[0].clientY;
+    epTouchDeltaX = 0;
+    epTouchAxisLocked = null;
+    epSwipeActive = true;
+  }, { passive: true });
+  epModalSlider.addEventListener("touchmove", (e) => {
+    if(!epSwipeActive || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - epTouchStartX;
+    const dy = e.touches[0].clientY - epTouchStartY;
+    if(epTouchAxisLocked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)){
+      epTouchAxisLocked = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    }
+    if(epTouchAxisLocked === "x"){
+      e.preventDefault();
+      epTouchDeltaX = dx;
+      epModalSlider.style.transition = "none";
+      epModalSlider.style.transform = `translateX(${dx}px)`;
+    }
+  }, { passive: false });
+  epModalSlider.addEventListener("touchend", () => {
+    if(!epSwipeActive) return;
+    epSwipeActive = false;
+    if(epTouchAxisLocked !== "x"){ epTouchAxisLocked = null; return; }
+    epTouchAxisLocked = null;
+    const { min, max } = episodeNavBounds(currentEpisodeItem);
+    if(epTouchDeltaX <= -EP_SWIPE_THRESHOLD && currentEpisodeNumber < max){
+      slideToEpisode(currentEpisodeNumber + 1, "left");
+      return;
+    }
+    if(epTouchDeltaX >= EP_SWIPE_THRESHOLD && currentEpisodeNumber > min){
+      slideToEpisode(currentEpisodeNumber - 1, "right");
+      return;
+    }
+    epModalSlider.style.transition = "transform .18s ease";
+    epModalSlider.style.transform = "translateX(0)";
+  });
 
   // ---------- show detail overlay ----------
   const showDetailOverlay = $("#showDetailOverlay");
@@ -2905,6 +3153,7 @@
     $("#showDetailAbout").style.display = "";
     $("#showDetailEpisodes").style.display = "none";
     $("#showDetailJournal").style.display = "none";
+    $("#showDetailTabs").querySelector('[data-sdt="episodes"]').textContent = item.type === "anime" ? "Episodes" : "Chapters";
     const titleText = item.english || item.romaji;
     $("#showDetailTitle").textContent = titleText;
     $("#sdTopbarTitle").textContent = titleText;
@@ -3174,19 +3423,39 @@
       </div>`).join("");
   }
 
+  function episodeTotalFor(item){
+    const { released, tbd } = releaseWindowFor(item);
+    return Math.min(released + tbd, 2000);
+  }
+
   // One item's full per-episode/chapter list, appended into `container`.
-  // Shared by the single-show (ungrouped) case and each season section's
-  // expanded body below — `onToggle` lets each caller decide what to
-  // refresh after a tick (always just re-running the top-level render, see
-  // callers) rather than duplicating the row-building logic per case.
-  function buildEpisodeRowsInto(container, item, onToggle){
-    const cap = capFor(item);
-    const total = Math.min(cap || Math.max(item.progress + 5, 24), 300);
+  // Shared by the single-show (ungrouped) case, each season section's
+  // expanded body, and each story-arc section's body below — `onToggle`
+  // lets each caller decide what to refresh after a tick (always just
+  // re-running the top-level render, see callers) rather than duplicating
+  // the row-building logic per case. `range` (optional {from, to}) narrows
+  // the rows built to a slice of the full total, for arc sections. Rows
+  // past `released` render as inert "TBD" placeholders — never watchable,
+  // since they haven't actually released yet.
+  function buildEpisodeRowsInto(container, item, onToggle, range){
+    const { released } = releaseWindowFor(item);
+    const total = episodeTotalFor(item);
     if(!total){ container.innerHTML = `<div class="hint">Episode count unknown for this title yet.</div>`; return; }
-    for(let n = 1; n <= total; n++){
+    const from = range ? Math.max(1, range.from) : 1;
+    const to = range ? Math.min(range.to, total) : total;
+    for(let n = from; n <= to; n++){
+      const row = document.createElement("div");
+      if(n > released){
+        row.className = "ep-row tbd";
+        row.innerHTML = `
+          <span class="ernum">${item.type === "anime" ? "E" : "CH"}${n}</span>
+          <span class="ertitle">TBD</span>
+          <span class="ertbd-label">Coming soon</span>`;
+        container.appendChild(row);
+        continue;
+      }
       const watched = n <= item.progress;
       const knownTitle = item.type === "anime" && item.episodeTitles && item.episodeTitles[n-1];
-      const row = document.createElement("div");
       row.className = "ep-row" + (watched ? " watched" : "");
       row.innerHTML = `
         <span class="ernum">${item.type === "anime" ? "E" : "CH"}${n}</span>
@@ -3216,8 +3485,9 @@
   }
 
   function buildContinueCard(g, seasonNum){
-    const cap = capFor(g);
-    const next = Math.min(g.progress + 1, cap || g.progress + 1);
+    const { released } = releaseWindowFor(g);
+    const caughtUp = g.progress >= released;
+    const next = caughtUp ? g.progress : g.progress + 1;
     const knownTitle = g.episodeTitles && g.episodeTitles[next - 1];
     const card = document.createElement("div");
     card.className = "sd-continue-card";
@@ -3225,14 +3495,16 @@
       <img src="${g.customCover || g.cover || ""}" alt="" loading="lazy" />
       <div class="sd-cc-info">
         <div class="sd-cc-big">S${seasonNum} | E${next}</div>
-        <div class="sd-cc-sub">${escapeHtml(knownTitle || `Episode ${next}`)}</div>
+        <div class="sd-cc-sub">${caughtUp ? "Caught up — nothing new yet" : escapeHtml(knownTitle || `Episode ${next}`)}</div>
       </div>
-      <button class="tick static" aria-label="Mark next episode of Season ${seasonNum} watched"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
-    card.querySelector(".tick").addEventListener("click", (e) => {
-      e.stopPropagation();
-      bumpProgress(g, 1);
-      refreshEpisodesTab();
-    });
+      <button class="tick static${caughtUp ? " disabled" : ""}" aria-label="Mark next episode of Season ${seasonNum} watched" ${caughtUp ? "disabled" : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+    if(!caughtUp){
+      card.querySelector(".tick").addEventListener("click", (e) => {
+        e.stopPropagation();
+        bumpProgress(g, 1);
+        refreshEpisodesTab();
+      });
+    }
     card.addEventListener("click", () => {
       showDetailOverlay.classList.remove("open");
       openEpisodeDetail(g, next);
@@ -3242,8 +3514,9 @@
 
   function buildSeasonSection(g, seasonNum){
     const cap = capFor(g);
-    const done = cap ? g.progress >= cap : g.status === "completed";
-    const pct = cap ? Math.min(100, Math.round((g.progress / cap) * 100)) : (done ? 100 : 0);
+    const { released } = releaseWindowFor(g);
+    const done = released > 0 && g.progress >= released;
+    const pct = released ? Math.min(100, Math.round((g.progress / released) * 100)) : (done ? 100 : 0);
     const section = document.createElement("details");
     section.className = "detail-section sd-season";
     section.innerHTML = `
@@ -3259,7 +3532,7 @@
     section.querySelector(".ertick").addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      setProgressToEpisode(g, cap || g.progress, !done);
+      setProgressToEpisode(g, released || g.progress, !done);
       refreshEpisodesTab();
     });
     buildEpisodeRowsInto(section.querySelector(".sec-body"), g, refreshEpisodesTab);
@@ -3278,12 +3551,12 @@
       continuing.forEach(g => row.appendChild(buildContinueCard(g, group.indexOf(g) + 1)));
     }
 
-    const allDone = group.every(g => { const cap = capFor(g); return cap ? g.progress >= cap : g.status === "completed"; });
+    const allDone = group.every(g => { const { released } = releaseWindowFor(g); return released > 0 && g.progress >= released; });
     const header = document.createElement("div");
     header.className = "sd-allep-header";
     header.innerHTML = `<span>All episodes</span><button class="ertick${allDone ? " done" : ""}" aria-label="Mark every season ${allDone ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
     header.querySelector(".ertick").addEventListener("click", () => {
-      group.forEach(g => { const cap = capFor(g); setProgressToEpisode(g, cap || g.progress, !allDone); });
+      group.forEach(g => { const { released } = releaseWindowFor(g); setProgressToEpisode(g, released || g.progress, !allDone); });
       refreshEpisodesTab();
     });
     el.appendChild(header);
@@ -3291,14 +3564,135 @@
     group.forEach((g, idx) => el.appendChild(buildSeasonSection(g, idx + 1)));
   }
 
+  // Story-arc grouping for long-running single-entry titles that AniList
+  // doesn't split into separate season entries (e.g. One Piece). There is
+  // no reliable API for this — every range below was hand-verified against
+  // multiple wikis (One Piece Wiki, Wikipedia, ListFist) rather than
+  // guessed. Keyed by lowercased title so it matches whichever list
+  // (anime/reading) the entry lives in. Titles not listed here just fall
+  // back to the flat episode list, same as before this feature existed.
+  // A few one-off filler episodes that interleave with a neighboring arc's
+  // range in the source material were folded into that arc rather than
+  // modeled as gaps, to keep the ranges contiguous and simple. The final
+  // arc's `end` is left null (open-ended) where sources disagreed on the
+  // exact boundary of the still-ongoing frontier — everything from its
+  // start onward groups under it, so new episodes/chapters never end up
+  // unlabeled as the series continues.
+  const ARC_DATA = {
+    "one piece": {
+      anime: [
+        { name:"Romance Dawn", start:1, end:3 }, { name:"Orange Town", start:4, end:8 },
+        { name:"Syrup Village", start:9, end:18 }, { name:"Baratie", start:19, end:30 },
+        { name:"Arlong Park", start:31, end:45 }, { name:"Buggy Side Story", start:46, end:47 },
+        { name:"Loguetown", start:48, end:53 }, { name:"Warship Island", start:54, end:61 },
+        { name:"Reverse Mountain", start:62, end:63 }, { name:"Whiskey Peak", start:64, end:67 },
+        { name:"Koby and Helmeppo", start:68, end:69 }, { name:"Little Garden", start:70, end:77 },
+        { name:"Drum Island", start:78, end:91 }, { name:"Alabasta", start:92, end:130 },
+        { name:"Post-Alabasta", start:131, end:135 }, { name:"Goat Island", start:136, end:138 },
+        { name:"Ruluka Island", start:139, end:143 }, { name:"Jaya", start:144, end:152 },
+        { name:"Skypiea", start:153, end:195 }, { name:"G-8", start:196, end:206 },
+        { name:"Long Ring Long Land", start:207, end:219 }, { name:"Ocean's Dream", start:220, end:224 },
+        { name:"Foxy's Return", start:225, end:226 }, { name:"Water 7", start:227, end:263 },
+        { name:"Enies Lobby", start:264, end:312 }, { name:"Post-Enies Lobby", start:313, end:325 },
+        { name:"Ice Hunter", start:326, end:336 }, { name:"Thriller Bark", start:337, end:381 },
+        { name:"Spa Island", start:382, end:384 }, { name:"Sabaody Archipelago", start:385, end:405 },
+        { name:"Special Historical", start:406, end:407 }, { name:"Amazon Lily", start:408, end:421 },
+        { name:"Impel Down", start:422, end:456 }, { name:"Marineford", start:457, end:489 },
+        { name:"Post-War", start:490, end:516 }, { name:"Return to Sabaody", start:517, end:522 },
+        { name:"Fishman Island", start:523, end:574 }, { name:"Z's Ambition", start:575, end:578 },
+        { name:"Punk Hazard", start:579, end:625 }, { name:"Caesar Retrieval", start:626, end:628 },
+        { name:"Dressrosa", start:629, end:746 }, { name:"Silver Mine", start:747, end:750 },
+        { name:"Zou", start:751, end:779 }, { name:"Marine Rookie", start:780, end:782 },
+        { name:"Whole Cake Island", start:783, end:877 }, { name:"Levely", start:878, end:889 },
+        { name:"Wano Country: Act 1", start:890, end:917 }, { name:"Wano Country: Act 2", start:918, end:958 },
+        { name:"Wano Country: Act 3", start:959, end:1083 }, { name:"Egghead", start:1084, end:null }
+      ],
+      manga: [
+        { name:"Romance Dawn", start:1, end:7 }, { name:"Orange Town", start:8, end:21 },
+        { name:"Syrup Village", start:22, end:41 }, { name:"Baratie", start:42, end:68 },
+        { name:"Arlong Park", start:69, end:95 }, { name:"Loguetown", start:96, end:100 },
+        { name:"Reverse Mountain", start:101, end:105 }, { name:"Whiskey Peak", start:106, end:114 },
+        { name:"Little Garden", start:115, end:129 }, { name:"Drum Island", start:130, end:154 },
+        { name:"Alabasta", start:155, end:217 }, { name:"Jaya", start:218, end:236 },
+        { name:"Skypiea", start:237, end:302 }, { name:"Long Ring Long Land", start:303, end:321 },
+        { name:"Water 7", start:322, end:374 }, { name:"Enies Lobby", start:375, end:430 },
+        { name:"Post-Enies Lobby", start:431, end:441 }, { name:"Thriller Bark", start:442, end:489 },
+        { name:"Sabaody Archipelago", start:490, end:513 }, { name:"Amazon Lily", start:514, end:524 },
+        { name:"Impel Down", start:525, end:549 }, { name:"Marineford", start:550, end:580 },
+        { name:"Post-War", start:581, end:597 }, { name:"Return to Sabaody", start:598, end:602 },
+        { name:"Fishman Island", start:603, end:653 }, { name:"Punk Hazard", start:654, end:699 },
+        { name:"Dressrosa", start:700, end:801 }, { name:"Zou", start:802, end:824 },
+        { name:"Whole Cake Island", start:825, end:902 }, { name:"Levely", start:903, end:908 },
+        { name:"Wano Country: Act 1", start:909, end:924 }, { name:"Wano Country: Act 2", start:925, end:957 },
+        { name:"Wano Country: Act 3", start:958, end:1057 }, { name:"Egghead", start:1058, end:null }
+      ]
+    }
+  };
+  function findArcList(item){
+    const data = ARC_DATA[(item.english || item.romaji || "").trim().toLowerCase()];
+    if(!data) return null;
+    return item.type === "anime" ? data.anime : data.manga;
+  }
+
+  function buildArcSection(item, arc){
+    const total = episodeTotalFor(item);
+    const { released } = releaseWindowFor(item);
+    const from = arc.start;
+    const to = arc.end == null ? total : Math.min(arc.end, total);
+    const releasedTo = Math.min(to, released);
+    const count = Math.max(0, releasedTo - from + 1);
+    const watchedInArc = Math.max(0, Math.min(item.progress, releasedTo) - from + 1);
+    const done = count > 0 && watchedInArc >= count;
+    const pct = count ? Math.min(100, Math.round((watchedInArc / count) * 100)) : 0;
+    const section = document.createElement("details");
+    section.className = "detail-section sd-season";
+    section.innerHTML = `
+      <summary>
+        <span class="sd-season-title">${escapeHtml(arc.name)}<svg class="chev-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        <span class="sd-season-right">
+          <span class="sd-season-count">${Math.max(0, watchedInArc)}${count ? `/${count}` : ""}</span>
+          <button class="ertick${done ? " done" : ""}" aria-label="Mark ${escapeHtml(arc.name)} ${done ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+        </span>
+      </summary>
+      <div class="sd-season-bar${done ? " complete" : ""}"><div style="width:${pct}%"></div></div>
+      <div class="sec-body"></div>`;
+    section.querySelector(".ertick").addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      setProgressToEpisode(item, releasedTo, !done);
+      refreshEpisodesTab();
+    });
+    buildEpisodeRowsInto(section.querySelector(".sec-body"), item, refreshEpisodesTab, { from, to });
+    return section;
+  }
+
+  function renderArcGroupedEpisodes(el, item, arcs){
+    el.innerHTML = "";
+    const { released } = releaseWindowFor(item);
+    const allDone = released > 0 && item.progress >= released;
+    const unit = item.type === "anime" ? "episodes" : "chapters";
+    const header = document.createElement("div");
+    header.className = "sd-allep-header";
+    header.innerHTML = `<span>All ${unit}</span><button class="ertick${allDone ? " done" : ""}" aria-label="Mark all ${allDone ? "unwatched" : "watched"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`;
+    header.querySelector(".ertick").addEventListener("click", () => {
+      setProgressToEpisode(item, released, !allDone);
+      refreshEpisodesTab();
+    });
+    el.appendChild(header);
+    arcs.forEach(arc => el.appendChild(buildArcSection(item, arc)));
+  }
+
   async function renderShowDetailEpisodes(item){
     const el = $("#showDetailEpisodes");
     el.innerHTML = loadingHtml("Loading episodes");
-    if(item.type !== "anime"){ renderFlatEpisodes(el, item); return; }
-    const group = await computeSeasonGroup(item);
-    if(currentShowItem !== item) return;
-    if(group.length <= 1){ renderFlatEpisodes(el, item); return; }
-    renderGroupedEpisodes(el, group);
+    if(item.type === "anime"){
+      const group = await computeSeasonGroup(item);
+      if(currentShowItem !== item) return;
+      if(group.length > 1){ renderGroupedEpisodes(el, group); return; }
+    }
+    const arcs = findArcList(item);
+    if(arcs && arcs.length){ renderArcGroupedEpisodes(el, item, arcs); return; }
+    renderFlatEpisodes(el, item);
   }
 
   // AniTrack's signature feature: a private diary page per title, separate
@@ -4750,6 +5144,7 @@
   }
 
   // ---------- initial paint ----------
+  reconcileCompletionStatus();
   renderTabs();
   render();
   updateNotifBell();
