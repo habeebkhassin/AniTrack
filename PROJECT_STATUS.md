@@ -5,6 +5,487 @@ the top.
 
 ---
 
+## Session: Discover/Search Season Dedup + Archive Responsiveness
+
+### Completed
+
+**Discover tab and search results no longer show one card per season.**
+AniList lists every season of a show as a fully separate entry with no
+"this show has N seasons" concept of its own — Discover's browse grid,
+the fabAdd search overlay, and the Discover tab's own inline search
+could all show the same show 2-3 times in a row ("Grand Blue Dreaming
+Season 2" and "... Season 3" as separate cards). Fixed at the source
+across all three: cards now display the base title only ("Grand Blue
+Dreaming"), and duplicate seasons of the same base title are collapsed
+to a single card — keeping whichever occurrence AniList's own result
+ordering already listed first, not a guessed "best" season.
+
+**Archive page width fixed.** The Archive overlay (hub, Character
+Catalogue, deck grid, flat character grid) was capped at 1120px — wide
+enough for the catalogue's 3-column grid, but the Archive home's plain
+list of category rows, and the catalogue's progress bar/search box/
+filter row (none of which are a grid), stretched to that same width on
+a real desktop window and read as sparse and oversized rather than
+responsive. Narrowed the whole overlay to 780px — still comfortable for
+3 solid card columns, but every non-grid part of the page now reads as
+an intentionally-sized page rather than an empty stretched one.
+
+### Files Modified
+
+`index.html` only.
+
+### Technical Notes
+
+**Season dedup reuses the season-grouping feature's own regex, not a
+new one.** `stripSeasonSuffix()` and `dedupeBySeasonBase()` both call the
+already-existing `seasonGroupBaseName()`/`SEASON_SUFFIX_RE` (built for
+grouping a user's own tracked seasons under one Episodes-tab view) —
+same "same base name after stripping a trailing Season N / Nth Season
+suffix" definition, now applied one layer earlier, before anything is
+even added to the list.
+
+**One width variable, not per-view overrides.** Considered giving the
+Archive home view its own narrower inner max-width while leaving the
+catalogue's grid-bearing views at the original 1120px, but that would
+have made the page visibly change width as you navigate between its own
+sub-views (jarring, not "responsive" in the sense that matters) —
+simpler and more coherent to size the whole overlay for its most
+space-hungry content (the 3-column grid) at a number that doesn't leave
+everything else looking sparse, one `--archive-max-width` value.
+
+**Testing.** Verified live with Playwright: Discover's trending grid,
+the fabAdd search overlay, and the Discover tab's inline search all
+strip season suffixes and drop duplicate-season cards from mocked
+AniList responses matching the exact titles reported ("Mushoku Tensei:
+Jobless Reincarnation Season 3" → "Mushoku Tensei: Jobless
+Reincarnation", "Grand Blue Dreaming Season 2"/"Season 3" → one "Grand
+Blue Dreaming" card). Archive re-screenshotted at 390/700/1024/1440/
+1920px — no horizontal overflow at any width, home/catalogue/deck/flat
+views all confirmed visibly proportional rather than sparse at desktop
+widths, 3-column grid still holds at the narrower cap. Full existing
+regression suite (Character Archive + broader app, 20+ scripts)
+re-run to confirm zero regressions.
+
+### Known Issues
+
+- None identified for this session's scope.
+
+### Future Improvements
+
+- None identified — both fixes were narrowly scoped to the reported
+  issues.
+
+---
+
+## Session: Character Catalogue Deck Grouping
+
+### Completed
+
+The global Character Catalogue (Archive hub → Characters) now opens
+grouped into one "deck" per series by default, instead of a flat mixed
+grid — closer to a collector's binder than a database table, matching
+the Character Archive's original "premium collector's encyclopedia"
+brief. Each deck is a themed, stacked-card tile (two rotated layers
+behind the face, reusing the same series/franchise/genre theming and
+crest every individual card already uses) showing the series title and
+an "X / Y Unlocked" count. Clicking a deck ungroups it — drills into
+just that show's character grid, with a "Regroup" button to return to
+the deck view. A persistent "Show All Characters" / "Group by Series"
+toggle lets you leave grouping off entirely and browse the full flat,
+filterable grid as before (all 8 sort modes and 5 filters untouched).
+Typing a search query automatically bypasses grouping regardless of the
+toggle state — searching for a character by name against a stack of
+unopened decks doesn't make sense — and restores deck view again once
+the query is cleared.
+
+### Files Modified
+
+`index.html` only.
+
+### Technical Notes
+
+**Deck state is separate from, not layered onto, the existing filter
+system.** The catalogue already had a "Series" filter dropdown that
+narrowed the flat grid to one show; decks don't replace or fight with
+it — `catalogueExpandedDeck` filters entries the same way a manually-
+picked series filter would, so drilling into a deck and manually setting
+the Series filter both funnel through the same entries logic, just via
+different state.
+
+**One extra sort pass, no extra data or network calls.** Decks are built
+by grouping the exact same `allArchiveEntries()` array the flat grid
+already computes (`catalogueDecksFrom`), sorted by unlock percentage
+(most-complete decks first) — no new fetch, no new cache.
+
+**Testing.** Verified live with Playwright: default view shows decks not
+individual cards with sort/filter controls hidden; clicking a deck shows
+only that show's characters (including correctly keeping a locked
+`SUPPORTING` character as a "???" card — deck drilling doesn't bypass
+the existing spoiler-protection gate); Regroup returns to deck view;
+the explicit ungroup/regroup toggle works both directions; typing a
+search query bypasses grouping and hides the toggle bar, clearing it
+restores deck view. Updated one pre-existing test
+(`test-char-catalogue.js`) to explicitly ungroup first, since its
+scenario (search/sort/theme/responsive-columns on the flat grid) now
+sits one click behind the new default — not a regression, the direct
+consequence of intentionally changing the default view. Full existing
+regression suite re-run to confirm zero impact elsewhere.
+
+### Known Issues
+
+- None — the per-show Character Archive tab (inside Show Detail) is
+  intentionally untouched; it's already scoped to one show, so deck
+  grouping doesn't apply there.
+
+### Future Improvements
+
+- Deck sort order (currently unlock-percentage-first) could become
+  user-choosable (alphabetical, recently unlocked, etc.) if that turns
+  out to matter once libraries grow large.
+
+---
+
+## Session: Show/Manga Details Page UI/UX Fixes
+
+Three scoped fixes to the Details page, per direct brief. No other pages
+touched.
+
+### Completed
+
+**Task 1 — Episode cards.** Removed `.card .status-dot`, the small
+colored dot at the top-left of every library card's poster. (Confirmed
+with the user first: the element as literally described — "blue,
+top-left, on episode cards" — didn't exist anywhere on the Details page
+itself; the only real match anywhere in the codebase was this status dot
+on the general tracked-item card used on Home/status tabs, which the
+user confirmed was the intended target.) Purely `position:absolute` and
+non-color-coded elsewhere, so removing it didn't disturb any layout —
+verified no gap was left behind.
+
+**Task 2 — Expandable synopsis.** The About tab's synopsis now clamps to
+~4 lines with a soft fade on the last visible line and a "Read More"
+toggle beneath it; expanding/collapsing animates smoothly via a measured
+`max-height` transition (not `-webkit-line-clamp`, which can't animate).
+Skips the toggle entirely when the text already fits within the clamp.
+No modal, no navigation — fully inline.
+
+**Task 3 — Discover More.** Full rebuild. No more `<a href="anilist.co">`
+— every recommendation now silently adds the title to your list (if not
+already tracked, same precedent as the Discover tab's own browse grid)
+and opens its Show Detail page inside AniTrack. Cards were redesigned
+landscape/compact (poster left, info right) showing title, original
+title when it differs, rating, year, episode/chapter count, status +
+format + genre badges, and a small progress bar if you've already
+started that title. New subsections: Similar Anime, Similar Manga, Same
+Studio, Same Author/Mangaka — each pulling real AniList data (studio and
+staff "other credited works" connections, fetched in the same request as
+everything else, not a second round trip). Similar Genres kept as-is
+functionally (already opened Discover pre-filtered correctly) with a
+missing hover state added. Empty state now reads "No recommendations
+available yet." instead of rendering nothing.
+
+### Files Modified
+
+`index.html` only.
+
+### Technical Notes
+
+**A render-ordering bug the synopsis toggle had to work around, not
+fix.** `openShowDetail()` calls `renderShowDetailAbout()` *before* adding
+the overlay's `.open` class, so content paints the instant the overlay
+becomes visible rather than after. That means any layout measurement
+taken synchronously inside the render function runs against a
+`display:none` subtree — `scrollHeight` and computed `line-height` are
+meaningless there. Caught live via Playwright (the clamp silently never
+engaged, measuring ~331px "collapsed" height on genuinely long text) —
+fixed by deferring the measurement one `requestAnimationFrame`, by which
+point the overlay's `open` class has already landed. Left the existing
+render-before-open ordering itself alone; it's intentional and
+unrelated to this task.
+
+**Recommendation data reuses `MEDIA_DETAIL_FIELDS` and the exact field
+shape `SEARCH_QUERY`/`DISCOVER_QUERY`/`REFRESH_QUERY` already use**
+(`REC_MEDIA_FIELDS`), rather than a new bespoke shape — this is also
+deliberately the *same* shape `addToList()` already expects, so a
+recommendation card can be added to the list through the same function
+Discover/search results already use, no translation layer.
+
+**Same Studio / Same Author fetched as nested connections in the
+existing `SHOW_EXTRA_QUERY`**, not a second request:
+`studios(isMain:true){ nodes{ id name media(...) } }` and
+`staff(...){ edges{ node{ id name staffMedia(...) } } }` pull each
+studio's/staff member's other credited titles as a sub-selection of data
+already being fetched, keeping this at one network request total per
+show — consistent with "avoid unnecessary API calls."
+
+**`pickCreator()` was deliberately left untouched, not restructured.**
+The straightforward change would have been making it return `{name, id}`
+so the new "Same Author" section could use the id — but `pickCreator()`'s
+plain-string return is also relied on by `buildDetailMetaGrid` (the
+existing Director/Mangaka row) and, more importantly, by
+`computeFavoriteMangaka()` on the Stats page, which tallies it as a bare
+string. Changing the contract would have silently broken an unrelated,
+already-shipped feature. Instead, factored the shared "find the matching
+staff edge" logic into `findCreatorEdge()` and added a second, separate
+reader (`pickCreatorMedia()`) — `pickCreator()`'s behavior and return
+shape are byte-for-byte identical to before.
+
+**Migration guards for both `item.characters` and `item.extra`.**
+Existing users already have `item.extra` cached from before this session
+with the old, thin recommendation shape (id/type/title/coverImage only —
+no format/status/episodes/genres, which the new cards need). Added the
+same kind of staleness check already used for `item.characters`: if a
+cached recommendation is missing `format`, treat the whole `item.extra`
+as stale and refetch once, rather than serving incomplete cards forever.
+
+**Testing.** Verified live with Playwright: status-dot fully gone from
+Home cards with no layout gap; long-vs-short synopsis (clamp engages
+only when needed, expand/collapse both animate and measure correctly);
+Discover More subsections all render from mocked studio/staff/
+recommendation data, zero `anilist.co` links or `target="_blank"`
+anywhere in the section, clicking an untracked recommendation adds it
+and navigates internally (no new tab/window), clicking an already-
+tracked recommendation navigates without creating a duplicate and shows
+its real progress bar; empty state renders the exact specified copy.
+Full pre-existing regression suite (25+ scripts spanning episode
+tracking, season/arc grouping, the episode modal, lazy loading,
+timeline/notifications, the responsive shell, and the entire Character
+Archive — which shares `ensureShowExtra`/`SHOW_EXTRA_QUERY` with this
+session's changes) re-run to confirm zero regressions.
+
+### Known Issues
+
+- **"Users Also Added" not implemented.** Explicitly marked
+  "(Optional architecture for future)" in the brief, and there's no
+  honest way to source it anyway — AniTrack is a single-user, client-only
+  app with no backend or analytics, so "what other users added" is data
+  that could never exist here without a server. Left as a documented gap
+  rather than fabricated.
+- **Studio/staff nested-query shape not verified against the live
+  AniList API.** This sandbox can't reach the real network — every test
+  above mocks the GraphQL response. The nested `studios.media` /
+  `staff.staffMedia` connections are standard, well-established AniList
+  API v2 fields used exactly this way by other AniList clients, but a
+  live smoke-test against the real endpoint is worth doing in a
+  follow-up session before fully trusting the Same Studio/Same Author
+  sections in production.
+- **Recommendation subsections cap at 5 cards each** — a scope/length
+  judgment call to keep the collapsed-by-default "Discover More" section
+  digestible, not a spec requirement either way.
+
+### Future Improvements
+
+- Live-verify the studio/staff query shape against real AniList once
+  network access allows it (see Known Issues).
+- "Users Also Added" becomes buildable if AniTrack ever grows a backend.
+- Recommendation score/sort could incorporate weighted signals across
+  sources (shared genres + rating + recency) rather than each
+  subsection's own AniList-provided order, if that turns out to matter
+  in practice.
+
+---
+
+## Session: Character Archive System
+
+### Completed
+
+AniTrack's full Character Archive — the app's collector-card character
+system, replacing the old 6-character horizontal scroll strip in Show
+Detail's About tab.
+
+- **Section rename**: "Characters" → "Character Archive," promoted from a
+  sub-section of About to its own 4th Show Detail tab (About | Episodes |
+  Character Archive | Journal).
+- **Collector card grid**, responsive 3/2/1 columns (desktop/tablet/
+  mobile), in two places: the per-show tab (that title's deck only) and a
+  new cross-series **Character Catalogue** inside a new **Archive** hub,
+  opened via a new header icon beside the notification bell.
+- **Archive hub**: a data-driven category list (`ARCHIVE_CATEGORIES`) —
+  only Characters is implemented; Quotes/Scenes/Locations/Items/Journal
+  Entries/Collections render as dim "Coming soon" rows, so adding a real
+  future category is a one-line addition, not a redesign.
+- **Theme system**: series → franchise → genre → default priority, each
+  with a hand-authored monochrome inline-SVG crest. Series themes cover
+  the 5 shows named in the brief (Attack on Titan/Survey Corps, One
+  Piece/Straw Hat, Naruto/Leaf Village, Bleach/Soul Society, Frieren/
+  Magic Crest, Death Note/Notebook); franchise theming reuses the
+  existing season-grouping feature's `seasonGroupBaseName` rather than a
+  second detection system, so e.g. all tracked Frieren seasons share one
+  deck; genre theming covers all 14 genres named in the brief.
+- **Spoiler protection**: role-only gating (see Technical Notes for why
+  this diverges from the original brief) — `MAIN` characters always
+  visible, `SUPPORTING`/`BACKGROUND` silhouetted with "???" until the
+  series is completed. A separate, uniform "deep content" gate (full
+  spoiler-tagged biography, My Journey, Quotes, Relationships) requires
+  series completion regardless of role. A Spoiler Protection toggle in
+  the Archive hub disables every gate at once.
+- **Character detail page**: large art, universal metadata grid (every
+  field always rendered, "—" for anything AniList doesn't have — see
+  Known Limitations), Voice Actors (Japanese + English, avatar/name/
+  language), and collapsible widgets: Biography (spoiler-tag aware),
+  Gallery, Relationships (honest empty state), Timeline (repurposed as
+  the user's own personal encounter history), My Journey (private form:
+  favorite moment/quote/notes/10-star rating), Quotes (the user's own
+  Favorite Quote plus any matching entries from the existing
+  `WISDOM_QUOTES` set).
+- **Unlock progress**: "N% · X / Y Characters Unlocked" readout, both
+  per-show and global, computed live (not stored) from role + completion
+  state across every cached character.
+- **Notifications**: new `characterUnlocks` category in the existing
+  Notification Settings page (purely additive to the existing
+  data-driven `NOTIF_CATEGORY_DEFS` list — no new UI template). A
+  character unlocking logs a Timeline entry and, for a single unlock,
+  fires the normal live notification; multiple simultaneous unlocks in
+  one show log individually but alert via one combined toast instead of
+  a notification burst. Archive milestones (10/50/100/500 characters)
+  reuse the exact `record()`/first-run-silent-baseline pattern
+  Statistics Milestones already established.
+- **Performance**: characters are cached directly on `item.characters`
+  (already-existing, already-persisted field — just enriched, not
+  duplicated into a second store); the global catalogue lazily
+  batch-warms only uncached tracked items on first visit, chunked 50 ids
+  per request via a new `CHAR_BATCH_QUERY` mirroring `REFRESH_QUERY`'s
+  existing pattern; grids render with skeleton placeholders, never
+  spinners.
+
+### Architecture
+
+- `item.characters`: enriched in place (id, name, nativeName, aliases,
+  image, role, gender, age, birthday, bloodType, favourites, description,
+  voiceActors[]) via `mapCharacterEdges()`, shared by the single-show
+  fetch (`ensureShowExtra`, extending the existing `SHOW_EXTRA_QUERY`)
+  and the new batched cross-library fetch (`warmCharacterCache`,
+  `CHAR_BATCH_QUERY`). Old thinner cached shapes (from before this
+  feature existed) are detected and transparently refetched once.
+- Two new small localStorage stores: `anitrack_char_journey_v1` (private
+  per-character notes, keyed by AniList character id) and
+  `anitrack_spoiler_protection_v1` (boolean). Deliberately **no** stored
+  "unlocked" or "already notified" flag — `isCharacterUnlocked(character,
+  item)` is a pure function of role + status, and unlock notifications
+  reuse `addTimelineEntry`'s existing id-based dedup
+  (`char-unlock-<characterId>`) as the single source of truth, the same
+  pattern every other notification category already uses.
+- `resolveCharacterTheme(item)`, `buildCharacterCardHtml()`,
+  `wireCharacterGridClicks()` are the shared building blocks behind both
+  the per-show tab and the global catalogue — one card component, one
+  theme resolver, not two parallel implementations.
+- `scanCharacterUnlocks()` slots into the existing `scanForTimelineEvents`
+  single choke point (periodic 5-minute cycle + boot), alongside
+  `scanStatisticsMilestones` and the other established scan functions —
+  no new interval, no new trigger architecture.
+
+### Files Modified
+
+`index.html` only — no new files, no build step, consistent with the
+rest of the app. New CSS is scoped under a single "Character Archive"
+comment block near the end of the stylesheet; new JS is grouped under a
+single "Character Archive" section rather than scattered.
+
+### Technical Notes
+
+**Why spoiler unlocking is role + completion only, not per-episode.**
+The original brief asked for "Watch Episode X to unlock" messaging.
+AniList's Character API has no per-episode "first appears in episode X"
+data — nothing free does. Confirmed directly with the user before
+building: rather than fabricate an estimated reveal episode, unlock
+gating is simply `MAIN` role → always visible (never a real spoiler,
+already in every show's own promotional art), `SUPPORTING`/`BACKGROUND`
+→ locked until the series is completed. No episode number is ever shown
+or implied.
+
+**Why Relationships is empty and Timeline is personal, not in-fiction.**
+Same reasoning — AniList has no character-relationship graph and no
+in-fiction timeline data at all. Relationships renders an honest "not
+available yet" state rather than fabricated data. Timeline was
+repurposed as the user's own encounter history (first seen / last seen,
+derived from real data: `item.startedDate`/`updatedAt` for when a MAIN
+character became visible, `item.finishedDate` for when a
+SUPPORTING/BACKGROUND character did), which is both honest and
+genuinely useful, consistent with AniTrack's journal-first identity.
+
+**Star-rating widget rebuild bug caught during testing.** The first
+implementation of My Journey's rating stars called a full
+`renderCharacterDetail()` on every click — since the rating widget lives
+inside a collapsible `<details>` that isn't open by default, this
+silently collapsed the very section the user was rating on every star
+click. Fixed by updating star visuals in place instead of a full
+re-render; caught live via Playwright, not by inspection.
+
+**A `pointer-events` bug on the detail hero's gradient overlay** briefly
+made the close button unclickable — the `::after` gradient pseudo-element
+painted on top of the button (same stacking context, no z-index) and
+intercepted the click. Fixed with `pointer-events:none` on the overlay,
+since it's purely decorative.
+
+**Reused rather than duplicated:** `seasonGroupBaseName` (season-grouping
+feature) for franchise theme matching; `lastWatchedAt` for the personal
+Timeline's "last seen"; `cleanDescription` for bio text cleanup;
+`escapeHtml`/`loadingHtml`/`STAR_SVG`/the `.detail-meta-grid` and
+`.sheet-row`/`.notes`/`.stars` CSS patterns from the existing per-show
+Journal tab; `WISDOM_QUOTES` for the Quotes widget's known-quote lookup;
+`GENRE_LIST` for catalogue genre filtering; the existing
+`NOTIF_CATEGORY_DEFS`/`addTimelineEntry`/`TL_ICONS` notification
+architecture end to end.
+
+**Testing.** Verified live with Playwright against the real running app
+across four scripts: core unlock/spoiler-gating flows (role gating,
+completion transition, spoiler-protection toggle, My Journey persistence),
+the global catalogue (cross-series aggregation, search, sort, theme
+resolution including the series/genre/default fallback chain, responsive
+grid columns at desktop/tablet/mobile widths), notification integration
+(unlock entry created once, no duplicate on re-scan, visible in the
+Timeline UI), and the full pre-existing regression suite (16 scripts
+covering episode tracking, season/arc grouping, the episode modal,
+lazy loading, timeline/notifications, and the responsive app shell) to
+confirm zero regressions outside the character surface.
+
+### Known Limitations
+
+- **No per-episode unlock data.** See Technical Notes — unlock is role +
+  completion only, not truly progressive mid-watch.
+- **Relationships has no real data source** — empty-state widget only,
+  architecturally ready for when/if that data exists.
+- **Gallery is typically single-image** — AniList's Character type only
+  exposes one portrait (`image.large`), not a gallery.
+- **Species, Height, Occupation, Affiliation, and Popularity always
+  render "—".** AniList's Character type has no structured fields for
+  any of these (sometimes prose buried in `description`, never reliably
+  parseable); Popularity specifically has no separate metric from
+  Favorites at the character level, so showing the same number under two
+  labels would be dishonest rather than "unknown." Species/Occupation
+  are therefore also not offered as catalogue filters — filtering on a
+  field that's always "Unknown" wouldn't do anything useful.
+- **"Historical" and "Military" genre themes are defined but unreachable
+  today** — AniList classifies both as tags, not genres, and this
+  session doesn't fetch tags. Ready for tag-based matching later.
+- **Global catalogue/progress only reflects series whose characters have
+  been fetched at least once** (lazy per-show caching, plus a one-time
+  batch warm-up on first Archive visit) — not a background fetch of the
+  entire library on every boot, per the "avoid unnecessary API calls"
+  performance principle. A show you've never opened either tab for won't
+  contribute to the global count until you do.
+- **Per-show tab's sort/filter is intentionally lighter than the global
+  catalogue's** (search + role filter only, vs. the catalogue's full
+  8-option sort + 5-filter toolkit) — a single show's cast doesn't need
+  the same power-user controls a library-wide catalogue does; this was a
+  scope judgment call, not a spec requirement either way.
+
+### Future Improvements
+
+- Wire the other Archive categories (Quotes, Scenes, Locations, Items,
+  Journal Entries, Collections) — the hub's data-driven
+  `ARCHIVE_CATEGORIES` list and the overlay's view-swap structure were
+  built to support this without redesign.
+- Tag-based genre theme matching (AniList `tags`) to actually reach the
+  Historical/Military themes.
+- If AniList ever exposes richer character data (multiple art pieces,
+  structured species/occupation, a relationship graph), the metadata
+  grid and Gallery/Relationships widgets are structured to absorb it
+  without a redesign — they're built around "always render the field,
+  '—' if empty," not "hide the row if data is missing."
+
+---
+
 ## Session: Whole-Codebase Quality Review
 
 Full audit of `index.html` (4,170 lines) for duplicate code, dead code,
